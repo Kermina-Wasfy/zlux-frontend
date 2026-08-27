@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Tabs from "@/components/general/Tabs";
 import SelectVehicleCard, { Vehicle } from "@/components/general/Cards/SelectVehicleCard";
 import Button from "@/components/ui/Button";
 import { toast } from "sonner";
@@ -66,10 +65,9 @@ export const VEHICLES_DATA: Vehicle[] = [
 
 interface SelectVehicleProps {
   onContinue?: (vehicle: Vehicle) => void;
-  onBack?: () => void;
 }
 
-export default function SelectVehicle({ onContinue, onBack }: SelectVehicleProps) {
+export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("lincoln-navigator");
 
   const selectedVehicle = VEHICLES_DATA.find((v) => v.id === selectedVehicleId) || VEHICLES_DATA[0];
@@ -87,18 +85,6 @@ export default function SelectVehicle({ onContinue, onBack }: SelectVehicleProps
 
   return (
     <section className="w-full pb-12 pt-4 bg-[#0D0D0D]">
-      {/* 3-Step Navigation Stepper */}
-      <Tabs
-        currentStep={2}
-        backHref="/reserve"
-        backLabel="Previous Step"
-        onStepClick={(stepId) => {
-          if (stepId === 1 && onBack) {
-            onBack();
-          }
-        }}
-      />
-
       <div className="container mx-auto pt-6 md:pt-10">
         {/* Section Heading */}
         <div className="mb-8 md:mb-10">

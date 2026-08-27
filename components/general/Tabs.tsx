@@ -32,7 +32,7 @@ export default function Tabs({
 }: TabsProps) {
     return (
         <div>
-            <div className="container mx-auto md:pt-12">
+            <div className="container mx-auto md:pt-8">
                 <div className="relative flex flex-col gap-6 pt-6 pb-10">
                 <div className="absolute left-0 right-0 bottom-0 h-[1px] [background:linear-gradient(to_right,#775A19,#F8E387,#775A19)]" />
                     {/* Back link */}
