@@ -11,10 +11,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  const isLinkActive = (link: { href: string }) => {
-    if (link.href === "/") return pathname === "/";
-    return pathname === "/" && (link.href === "#fleet" || link.href === "#services");
-  };
+  const isLinkActive = (link: { href: string }) => pathname === link.href;
 
   return (
     <header className="w-full z-50 py-5 md:py-5 sticky top-0 bg-[#0D0D0D]">
