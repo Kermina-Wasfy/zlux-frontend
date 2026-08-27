@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import SelectVehicleCard, { Vehicle } from "@/components/general/Cards/SelectVehicleCard";
 import Button from "@/components/ui/Button";
 import { toast } from "sonner";
@@ -68,6 +69,7 @@ interface SelectVehicleProps {
 }
 
 export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
+  const router = useRouter();
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("lincoln-navigator");
 
   const selectedVehicle = VEHICLES_DATA.find((v) => v.id === selectedVehicleId) || VEHICLES_DATA[0];
@@ -80,15 +82,17 @@ export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
     toast.success(`Selected ${selectedVehicle.name}! Proceeding to checkout.`);
     if (onContinue) {
       onContinue(selectedVehicle);
+    } else {
+      router.push("/reserve/checkout");
     }
   };
 
   return (
     <section className="w-full pb-12 pt-4 bg-[#0D0D0D]">
-      <div className="container mx-auto pt-6 md:pt-10">
+      <div className="container mx-auto">
         {/* Section Heading */}
         <div className="mb-8 md:mb-10">
-          <h1 className="text-[20px] md:text-[40px] font-[600] text-primary font-montserrat tracking-tight mb-2">
+          <h1 className="text-[20px] md:text-[40px] font-[600] text-primary font-montserrat tracking-tight mb-3">
             Select Your Vehicle
           </h1>
           <p className="text-[14px] md:text-[20px] text-silver font-inter font-[600]">
@@ -97,7 +101,7 @@ export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
         </div>
 
         {/* Vehicle Cards List */}
-        <div className="flex flex-col gap-4 md:gap-5">
+        <div className="flex flex-col gap-4 md:gap-8 md:px-12">
           {VEHICLES_DATA.map((vehicle) => (
             <SelectVehicleCard
               key={vehicle.id}
@@ -109,10 +113,10 @@ export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
         </div>
 
         {/* Action Button: Continue To Checkout */}
-        <div className="pt-8 md:pt-10 flex justify-end">
+        <div className="pt-8 md:pt-10 flex justify-end md:mr-12">
           <Button
             onClick={handleContinue}
-            className="w-full sm:w-auto px-8 py-3.5 text-[16px] md:text-[20px] shadow-[0_4px_25px_rgba(197,160,89,0.35)]"
+            className="w-full sm:w-auto px-6 py-3.5 text-[16px] md:text-[20px]"
           >
             Continue To Checkout
           </Button>

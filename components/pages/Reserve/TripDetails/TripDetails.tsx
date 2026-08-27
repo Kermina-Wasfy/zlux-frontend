@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { MapPin } from "lucide-react";
 import { toast } from "sonner";
-import Input from "@/components/ui/Input";
+import LocationInput from "@/components/ui/LocationInput";
 import Select from "@/components/ui/Select";
 import DatePicker from "@/components/ui/DatePicker";
 import TimePicker from "@/components/ui/TimePicker";
@@ -31,7 +31,10 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Active location query for Google Map
-  const mapLocation = formData.pickupLocation.trim() || formData.destination.trim() || "Los Angeles, CA, USA";
+  const mapLocation =
+    formData.pickupLocation.trim() ||
+    formData.destination.trim() ||
+    "Los Angeles, CA, USA";
 
   const handleChange = (field: keyof TripDetailsFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -91,18 +94,18 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
             <form onSubmit={handleSubmit} noValidate className="space-y-6 flex flex-col w-full">
               {/* Row 1: Pickup Location & Destination */}
               <div className="grid grid-cols-2 gap-5">
-                <Input
+                <LocationInput
                   label="Pickup Location"
                   placeholder="Address, Airport , Or Hotel"
                   value={formData.pickupLocation}
-                  onChange={(e) => handleChange("pickupLocation", e.target.value)}
+                  onChange={(v) => handleChange("pickupLocation", v)}
                   error={errors.pickupLocation}
                 />
-                <Input
+                <LocationInput
                   label="Destination"
                   placeholder="Address, Airport , Or Hotel"
                   value={formData.destination}
-                  onChange={(e) => handleChange("destination", e.target.value)}
+                  onChange={(v) => handleChange("destination", v)}
                   error={errors.destination}
                 />
               </div>
@@ -158,18 +161,47 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
                 referrerPolicy="no-referrer-when-downgrade"
               />
 
-              {/* Floating Map Marker Label Pill matching reference image */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 pointer-events-none z-10 flex flex-col items-center">
-                <div className="bg-[#1A1A1A]/95 text-white text-[12px] font-medium font-inter px-3 py-1.5 rounded-[6px] shadow-lg border border-black/40 flex items-center gap-1.5 whitespace-nowrap backdrop-blur-sm">
-                  <span>{mapLocation}</span>
-                </div>
-                {/* Marker Pin Icon */}
-                <div className="mt-1 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-[#3B82F6] flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-black/20 animate-bounce duration-1000">
-                    <MapPin className="w-4 h-4 text-white fill-white" />
+              {/* Start marker: Pickup */}
+              {formData.pickupLocation.trim() && (
+                <div className="absolute top-3 left-3 pointer-events-none z-10 flex flex-col items-center">
+                  <div className="bg-[#1A1A1A]/95 text-white text-[11px] md:text-[12px] font-medium font-inter px-3 py-1.5 rounded-[6px] shadow-lg border border-black/40 flex items-center gap-1.5 max-w-[220px] backdrop-blur-sm">
+                    <span className="truncate">{formData.pickupLocation.trim()}</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-full bg-[#10B981] flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-black/20">
+                      <span className="text-white text-[10px] font-bold font-inter">A</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* End marker: Destination */}
+              {formData.destination.trim() && (
+                <div className="absolute bottom-3 right-3 pointer-events-none z-10 flex flex-col items-center">
+                  <div className="mt-1 flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-full bg-[#EF4444] flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-black/20">
+                      <span className="text-white text-[10px] font-bold font-inter">B</span>
+                    </div>
+                  </div>
+                  <div className="bg-[#1A1A1A]/95 text-white text-[11px] md:text-[12px] font-medium font-inter px-3 py-1.5 rounded-[6px] shadow-lg border border-black/40 flex items-center gap-1.5 max-w-[220px] backdrop-blur-sm">
+                    <span className="truncate">{formData.destination.trim()}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Centered placeholder marker when no location selected yet */}
+              {!formData.pickupLocation.trim() && !formData.destination.trim() && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 pointer-events-none z-10 flex flex-col items-center">
+                  <div className="bg-[#1A1A1A]/95 text-white text-[12px] font-medium font-inter px-3 py-1.5 rounded-[6px] shadow-lg border border-black/40 flex items-center gap-1.5 whitespace-nowrap backdrop-blur-sm">
+                    <span>Los Angeles, CA, USA</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-[#3B82F6] flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-black/20 animate-bounce duration-1000">
+                      <MapPin className="w-4 h-4 text-white fill-white" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

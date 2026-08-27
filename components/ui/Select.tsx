@@ -142,7 +142,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             onClick={() => setOpen((o) => !o)}
             onKeyDown={handleTriggerKeyDown}
             onBlur={() => close()}
-            className={`flex items-center w-full h-[52px] px-4 pr-11 overflow-hidden rounded-[8px] bg-[#0D0D0D] text-[#E5E4E2] font-inter text-[16px] border border-gold-deep transition-all duration-200 outline-none cursor-pointer text-left ${
+            className={`flex items-center w-full h-[52px] px-4 pr-11 overflow-hidden rounded-[8px] bg-transparent text-[#E5E4E2] font-inter text-[16px] border border-gold-deep transition-all duration-200 outline-none cursor-pointer text-left ${
               error
                 ? "border-red-500/80 focus:border-red-500 focus:ring-1 focus:ring-red-500/30"
                 : open
