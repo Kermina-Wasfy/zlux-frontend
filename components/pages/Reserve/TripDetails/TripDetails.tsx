@@ -76,7 +76,7 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
       <div className="container mx-auto">
         {/* Section Heading */}
         <div className="mb-8 md:mb-10">
-          <h1 className="text-[20px] md:text-[40px] font-[600] text-primary font-montserrat tracking-tight mb-2">
+          <h1 className="text-[20px] md:text-[40px] font-[600] text-primary font-montserrat tracking-tight mb-3">
             Trip Details
           </h1>
           <p className="text-[14px] md:text-[20px] text-silver font-inter font-[600]">
@@ -87,7 +87,7 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
         {/* Main Content Grid: Form (Left) & Google Map (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-stretch">
           {/* Left Form Column */}
-          <div className="lg:col-span-6 xl:col-span-7 flex md:px-4">
+          <div className="lg:col-span-6 xl:col-span-7 flex md:px-5">
             <form onSubmit={handleSubmit} noValidate className="space-y-6 flex flex-col w-full">
               {/* Row 1: Pickup Location & Destination */}
               <div className="grid grid-cols-2 gap-5">

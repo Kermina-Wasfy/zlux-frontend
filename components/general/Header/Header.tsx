@@ -3,14 +3,21 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { navLinks } from "@/shared/NavLinks";
 import Button from "@/components/ui/Button";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  const isLinkActive = (link: { href: string }) => {
+    if (link.href === "/") return pathname === "/";
+    return pathname === "/" && (link.href === "#fleet" || link.href === "#services");
+  };
 
   return (
-    <header className="w-full z-50 py-3 md:py-5 sticky top-0 bg-[#0D0D0D]">
+    <header className="w-full z-50 py-5 md:py-5 sticky top-0 bg-[#0D0D0D]">
       <div className="container mx-auto">
         <div className="flex items-center justify-between">
           {/* Desktop Logo */}
@@ -33,7 +40,7 @@ export default function Header() {
               width={40}
               height={40}
               priority
-              className="h-9 w-9 object-contain"
+              className="h-10 w-10 object-contain"
             />
           </Link>
 
@@ -45,7 +52,7 @@ export default function Header() {
                   key={link.id}
                   href={link.href}
                   className={`font-inter  transition-all duration-200 ${
-                    link.isActive
+                    isLinkActive(link)
                       ? "text-primary font-[600] md:text-[20px] text-[18px] "
                       : "text-muted hover:text-primary font-[500] md:text-[16px] text-[14px]"
                   }`}
@@ -75,14 +82,14 @@ export default function Header() {
               alt="Toggle Menu"
               width={35}
               height={35}
-              className="w-8 h-8 object-contain"
+              className="w-10 h-10 object-contain"
             />
           </button>
         </div>
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden fixed left-0 right-0 top-16 bottom-0 p-5 rounded-b-2xl bg-[#0D0D0D]/95 border border-[#C5A059]/30 backdrop-blur-xl shadow-2xl transition-all animate-in fade-in slide-in-from-top-2 z-50">
+          <div className="md:hidden fixed left-0 right-0 top-16 bottom-0 p-5 mt-5 rounded-b-2xl bg-[#0D0D0D]/95 border border-[#C5A059]/30 backdrop-blur-xl shadow-2xl transition-all animate-in fade-in slide-in-from-top-2 z-50">
             <nav className="flex flex-col gap-4">
               {navLinks.map((link) => (
                 <Link
@@ -90,7 +97,7 @@ export default function Header() {
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`py-2 px-3 rounded-[8px] font-inter transition-colors ${
-                    link.isActive
+                    isLinkActive(link)
                       ? "text-primary font-[600] md:text-[20px] text-[18px]"
                       : "text-muted hover:text-primary font-[500] md:text-[16px] text-[14px]"
                   }`}

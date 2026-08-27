@@ -125,7 +125,7 @@ export default function TimePicker({
           type="button"
           onClick={() => setOpen((o) => !o)}
           onKeyDown={handleKeyDown}
-          className={`w-full h-[52px] px-4 pr-11 rounded-[8px] bg-[#0D0D0D] text-[#E5E4E2] font-inter text-[12px] md:text-[16px] border border-gold-deep transition-all duration-200 outline-none cursor-pointer text-left ${
+          className={`flex items-center w-full h-[52px] px-4 pr-11 overflow-hidden rounded-[8px] bg-[#0D0D0D] text-[#E5E4E2] font-inter text-[16px] border border-gold-deep transition-all duration-200 outline-none cursor-pointer text-left ${
             error
               ? "border-red-500/80 focus:border-red-500 focus:ring-1 focus:ring-red-500/30"
               : open
@@ -133,7 +133,7 @@ export default function TimePicker({
                 : "border-[#453823]/80 hover:border-[#C5A059]/60 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059]/30"
           } ${className}`}
         >
-          <span className={`${selectedTime ? "" : "text-[#6D6D6D]"} text-[12px] md:text-[16px]`}>
+          <span className={`truncate ${selectedTime ? "" : "text-[#6D6D6D]"} text-[16px]`}>
             {selectedTime ? selectedTime.label : placeholder}
           </span>
         </button>

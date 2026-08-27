@@ -4,7 +4,7 @@ import Button from "@/components/ui/Button";
 
 export default function Herosection() {
   return (
-    <section className="relative z-0 md:min-h-screen h-[500px] w-full flex flex-col justify-between overflow-hidden bg-[#0D0D0D]">
+    <section className="relative z-0 min-h-screen w-full flex flex-col justify-between overflow-hidden bg-[#0D0D0D]">
       {/* Background Image with Overlays */}
       <div className="absolute inset-0 w-full h-full z-[-1] select-none">
         <Image
@@ -49,7 +49,7 @@ export default function Herosection() {
           {/* Action CTA Button */}
           <div className="pt-12 md:pt-20">
             <Button
-              href="#reserve"
+              href="/reserve"
               className="px-8 py-2 text-[16px] md:text-[20px] hover:shadow-[0_4px_25px_rgba(197,160,89,0.35)]"
             >
               Reserve Now
