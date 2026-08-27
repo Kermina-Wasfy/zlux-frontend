@@ -1,26 +1,157 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0D0D0D;
+  --foreground: #E5E4E2;
+
+  /* Brand Palette */
+  --color-primary: #C5A059;
+  --color-gold-deep: #775A19;
+  --color-gold-light: #F8E387;
+  --color-dark-bg: #0D0D0D;
+  --color-dark-card: #1E1E1E;
+  --color-platinum: #E5E4E2;
+  --color-silver: #C7C6C4;
+  --color-muted: #91918F;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(to right, #C5A059, #F8E387);
+  --gradient-secondary: linear-gradient(to right, #775A19, #F8E387, #775A19);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --color-primary: #C5A059;
+  --color-primary-gold: #C5A059;
+  --color-gold-deep: #775A19;
+  --color-gold-light: #F8E387;
+  --color-dark-bg: #0D0D0D;
+  --color-dark-card: #1E1E1E;
+  --color-platinum: #E5E4E2;
+  --color-silver: #C7C6C4;
+  --color-muted-gray: #91918F;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-inter: var(--font-inter), sans-serif;
+  --font-montserrat: var(--font-montserrat), sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Gradient Utilities */
+.bg-gradient-primary {
+  background: linear-gradient(to right, #C5A059, #F8E387);
+}
+
+.bg-gradient-gold {
+  background: linear-gradient(to right, #C5A059, #F8E387);
+}
+
+.bg-gradient-secondary {
+  background: linear-gradient(to right, #775A19, #F8E387, #775A19);
+}
+
+.bg-gradient-gold-tri {
+  background: linear-gradient(to right, #775A19, #F8E387, #775A19);
+}
+
+.text-gradient-primary {
+  background: linear-gradient(to right, #C5A059, #F8E387);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-secondary {
+  background: linear-gradient(to right, #775A19, #F8E387, #775A19);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Font utility helpers */
+.font-inter {
+  font-family: var(--font-inter), sans-serif;
+}
+
+.font-montserrat {
+  font-family: var(--font-montserrat), sans-serif;
+}
+
+.container {
+  padding-inline: 4rem;
+  max-width: 1900px;
+  margin-inline: auto;
+}
+
+@media (min-width: 1800px) {
+  .container {
+    padding-inline: 2.5rem;
+    max-width: 1750px;
+  }
+}
+
+@media (max-width: 1600px) {
+  .container {
+    padding-inline: 5.5rem;
+    max-width: 1900px;
+  }
+}
+
+@media (max-width: 1366px) {
+  .container {
+    padding-inline: 4rem;
+    max-width: 1900px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding-inline: 1rem;
+  }
+}
+
+/* Custom dropdown animation */
+@keyframes dropFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom dropdown scrollbar */
+.custom-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: #0d0d0d;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #775a19;
+  border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #c5a059;
+}
+
+/* Native date/time pickers: dark popup theme to match the Select dropdown */
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
+  cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
 }
