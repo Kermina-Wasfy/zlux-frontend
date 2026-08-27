@@ -18,7 +18,6 @@ const DEFAULT_STEPS: StepItem[] = [
 interface TabsProps {
     currentStep?: number;
     steps?: StepItem[];
-    onStepClick?: (stepId: number) => void;
     backHref?: string;
     backLabel?: string;
 }
@@ -26,7 +25,6 @@ interface TabsProps {
 export default function Tabs({
     currentStep = 1,
     steps = DEFAULT_STEPS,
-    onStepClick,
     backHref = "/",
     backLabel = "Back To Home",
 }: TabsProps) {
@@ -46,22 +44,17 @@ export default function Tabs({
                         </Link>
                     </div>
 
-                    {/* Stepper Navigation */}
+                    {/* Stepper Progress Bar */}
                     <div className="w-full flex items-center justify-center md:px-8">
                         <div className="w-full flex items-center justify-between ">
                             {steps.map((step, index) => {
                                 const isActive = step.id === currentStep;
                                 const isCompleted = step.id < currentStep;
-                                const isClickable = !!onStepClick;
 
                                 return (
                                     <React.Fragment key={step.id}>
                                         {/* Step Node */}
-                                        <div
-                                            onClick={() => isClickable && onStepClick(step.id)}
-                                            className={`flex flex-col items-center select-none ${isClickable ? "cursor-pointer" : "cursor-default"
-                                                }`}
-                                        >
+                                        <div className="flex flex-col items-center select-none cursor-default">
                                             {/* Step Circle */}
                                             <div
                                                 className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-[16px] md:text-[20px] font-[600] font-inter transition-all duration-300 ${isActive

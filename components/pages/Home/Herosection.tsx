@@ -21,7 +21,7 @@ export default function Herosection() {
       </div>
 
       {/* Main Hero Content */}
-      <div className="container mx-auto flex-1 flex flex-col justify-center">
+      <div className="container mx-auto flex-1 flex flex-col justify-center -mt-60 md:-mt-0">
         <div className=" flex flex-col items-start gap-3">
           {/* Tagline / Overline */}
           <span className="text-[14px] md:text-[24px] font-[700]  uppercase text-platinum font-montserrat">

@@ -10,15 +10,11 @@ export default function ReservePage() {
 
   return (
     <main className="min-h-[calc(100vh-80px)] w-full bg-[#0D0D0D] flex flex-col">
-      {/* 3-Step Stepper Header */}
+      {/* 3-Step Stepper Progress Header */}
       <Tabs
         currentStep={1}
         backHref="/"
         backLabel="Back To Home"
-        onStepClick={(stepId) => {
-          if (stepId === 1) return;
-          if (stepId === 2) router.push("/reserve/vehicle");
-        }}
       />
 
       {/* Step 1 Content: Trip Details */}
