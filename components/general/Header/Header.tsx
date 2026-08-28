@@ -61,7 +61,7 @@ export default function Header() {
 
             <Button
               href="/reserve"
-              className="px-6 py-2 text-[18px] md:text-[20px] shadow-[0_2px_15px_rgba(197,160,89,0.25)]"
+              className="px-6 py-2 text-[18px] md:text-[20px]"
             >
               Reserve Now
             </Button>
@@ -106,7 +106,7 @@ export default function Header() {
                 <Button
                   href="/reserve"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-2 text-[18px] md:text-[20px] duration-300 shadow-md hover:brightness-105 active:scale-95"
+                  className="w-full py-2 text-[18px] md:text-[20px] duration-300"
                 >
                   Reserve Now
                 </Button>

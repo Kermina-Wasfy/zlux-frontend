@@ -73,7 +73,7 @@ export default function SelectVehicleCard({
                         </div>
                         <div className="flex items-center gap-1.5">
                             {/* <Briefcase className="w-4 h-4 text-primary" /> */}
-                            <Image src="/bags-icon.svg" alt="Bags Icon" width={20} height={20} className="text-primary" />
+                            <Image src="/bags-icon.svg" alt="Bags Icon" width={20} height={20} className="md:h-[20px] md:w-[20px] h-[10px] w-[10px] text-primary" />
 
                             <span>{vehicle.bags} Bags</span>
                         </div>

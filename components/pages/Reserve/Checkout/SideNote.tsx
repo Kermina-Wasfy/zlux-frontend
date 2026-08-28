@@ -5,7 +5,7 @@ import { Info } from "lucide-react";
 
 export default function SideNote() {
   return (
-    <div className="w-full bg-[#151515] py-4 px-8 border border-gold-deep flex items-start gap-3 select-none">
+    <div className="w-full bg-[#151515] py-4 px-8 border border-gold-deep flex items-start gap-3 select-none mt-10">
       <div className="text-gold-deep mt-0.5 shrink-0">
         <Info className="w-5 h-5" />
       </div>

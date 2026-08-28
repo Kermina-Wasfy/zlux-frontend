@@ -17,11 +17,15 @@ export interface BookingDetails {
 
 interface BookingSummaryProps {
   details?: BookingDetails;
+  showTotal?: boolean;
 }
 
-export default function BookingSummary({ details }: BookingSummaryProps) {
+export default function BookingSummary({
+  details,
+  showTotal = true,
+}: BookingSummaryProps) {
   const vehicleName = details?.vehicleName || "Lincoln Navigator";
-  const vehicleCapacity = details?.vehicleCapacity || "Up To 6 Passengers";
+  const vehicleCapacity = details?.vehicleCapacity || "Up To 3 Passengers";
   const vehicleImage = details?.vehicleImage || "/vehicle5.jpg";
   const pickup = details?.pickup || "—";
   const destination = details?.destination || "—";
@@ -45,16 +49,16 @@ export default function BookingSummary({ details }: BookingSummaryProps) {
       </div>
 
       {/* Booking Summary Heading */}
-      <h2 className="px-4 md:px-6 text-[16px] md:text-[20px] font-[600] text-primary font-montserrat tracking-tight mb-2">
+      <h2 className="px-4 md:px-6 text-[20px] md:text-[24px] font-[600] text-primary font-montserrat tracking-tight mb-2">
         Booking Summary
       </h2>
 
       {/* Vehicle Info */}
       <div className="px-4 md:px-6 mb-4">
-        <h3 className="text-[18px] md:text-[22px] font-[700] text-platinum font-montserrat tracking-tight">
+        <h3 className="text-[16px] md:text-[24px] font-[700] text-[#E5E4E2] font-inter tracking-tight">
           {vehicleName}
         </h3>
-        <p className="text-[13px] md:text-[15px] text-silver font-inter font-[500] mt-0.5">
+        <p className="text-[14px] md:text-[16px] text-[#91918F] font-inter font-[500] mt-0.5">
           {vehicleCapacity}
         </p>
       </div>
@@ -62,41 +66,43 @@ export default function BookingSummary({ details }: BookingSummaryProps) {
       {/* Details List */}
       <div className="px-4 md:px-6 py-4 space-y-3 font-inter text-[14px] md:text-[15px]">
         <div className="flex items-center justify-between gap-4">
-          <span className="text-silver font-[500]">Pickup</span>
+          <span className="text-[14px] md:text-[16px] text-[#91918F] font-inter font-[500]">Pickup</span>
           <span className="text-silver/70 text-right truncate max-w-[200px]">{pickup}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-silver font-[500]">Destination</span>
+          <span className="text-[14px] md:text-[16px] text-[#91918F] font-inter font-[500]">Destination</span>
           <span className="text-silver/70 text-right truncate max-w-[200px]">{destination}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-silver font-[500]">Date</span>
+          <span className="text-[14px] md:text-[16px] text-[#91918F] font-inter font-[500]">Date</span>
           <span className="text-silver/70 text-right">{date}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-silver font-[500]">Time</span>
+          <span className="text-[14px] md:text-[16px] text-[#91918F] font-inter font-[500]">Time</span>
           <span className="text-silver/70 text-right">{time}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-silver font-[500]">Service</span>
+          <span className="text-[14px] md:text-[16px] text-[#91918F] font-inter font-[500]">Service</span>
           <span className="text-silver/70 text-right">{service}</span>
         </div>
       </div>
 
       {/* Estimated Total */}
-      <div className="px-4 md:px-6 pt-5 flex flex-col">
-        <div className="flex items-baseline justify-between">
-          <span className="text-silver font-inter text-[14px] md:text-[16px] font-[500]">
-            Estimated Total
-          </span>
-          <span className="text-platinum font-montserrat font-[700] text-[24px] md:text-[32px] leading-none">
-            {typeof total === "number" ? `$${total}` : total}
+      {showTotal && (
+        <div className="px-4 md:px-6 pt-5 flex flex-col">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[#91918F] font-inter text-[14px] md:text-[16px] font-[500]">
+              Estimated Total
+            </span>
+            <span className="text-[#E5E4E2] font-inter font-[700] text-[24px] md:text-[32px] leading-none">
+              {typeof total === "number" ? `$${total}` : total}
+            </span>
+          </div>
+          <span className="text-[12px] md:text-[16px] text-[#91918F] font-inter font-[500] text-right mt-1.5">
+            Gratuity &amp; Fees Included
           </span>
         </div>
-        <span className="text-silver/70 font-inter text-[11px] md:text-[12px] text-right mt-1.5">
-          Gratuity &amp; Fees Included
-        </span>
-      </div>
+      )}
     </div>
   );
 }

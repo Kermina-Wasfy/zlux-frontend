@@ -37,9 +37,9 @@ export default function Tabs({
                     <div className="w-full flex justify-start">
                         <Link
                             href={backHref}
-                            className="inline-flex items-center gap-2.5 text-muted-gray font-inter text-[12px] md:text-[20px] font-[600] transition-colors group"
-                        >
-                            <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1 text-gold-deep" />
+                            className="inline-flex items-center gap-2.5 text-muted-gray hover:text-[#E5E4E2] font-inter text-[12px] md:text-[20px] font-[600] transition-colors group"
+                         >
+                            <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1 text-gold-deep group-hover:text-primary" />
                             <span>{backLabel}</span>
                         </Link>
                     </div>

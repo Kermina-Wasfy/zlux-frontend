@@ -28,11 +28,11 @@ export default function PassengerInformation({
   return (
     <div className="w-full bg-[#151515] p-4 md:p-6">
       {/* Title */}
-      <h2 className="text-[16px] md:text-[20px] font-[700] text-platinum font-inter tracking-tight mb-5">
+      <h2 className="text-[20px] font-[700] text-platinum font-montserrat tracking-tight mb-7">
         Passenger Information
       </h2>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Row 1: First Name & Last Name */}
         <div className="grid grid-cols-2 gap-4">
           <Input
@@ -75,6 +75,7 @@ export default function PassengerInformation({
         <div className="grid grid-cols-2 gap-4">
           <Select
             label="Passenger Count"
+            labelClassName="min-h-[48px] sm:min-h-0"
             options={PASSENGER_OPTIONS}
             placeholder="1"
             value={formData.passengerCount}
@@ -83,6 +84,7 @@ export default function PassengerInformation({
           />
           <Input
             label="Flight Number (Optional)"
+            labelClassName="min-h-[48px] sm:min-h-0"
             placeholder="AA1485"
             value={formData.flightNumber || ""}
             onChange={(e) => onChange("flightNumber", e.target.value)}
@@ -96,11 +98,11 @@ export default function PassengerInformation({
             Special Requests
           </label>
           <textarea
-            rows={3}
+            rows={4}
             placeholder="Any Special Accommodations Or Instructions For Your Chauffeur?"
             value={formData.specialRequests || ""}
             onChange={(e) => onChange("specialRequests", e.target.value)}
-            className="w-full min-h-[95px] p-4 rounded-[8px] bg-transparent text-[#E5E4E2] font-inter text-[16px] placeholder:text-[#6D6D6D] border border-gold-deep transition-all duration-200 outline-none hover:border-[#C5A059]/60 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059]/30 resize-none"
+            className="w-full placeholder:md:text-[16px] placeholder:text-[12px] min-h-[95px] p-4 rounded-[8px] bg-transparent text-[#E5E4E2] font-inter text-[16px] placeholder:text-[#C7C6C4] border border-primary transition-all duration-200 outline-none hover:border-[#C5A059]/60 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059]/30 resize-none"
           />
         </div>
       </div>

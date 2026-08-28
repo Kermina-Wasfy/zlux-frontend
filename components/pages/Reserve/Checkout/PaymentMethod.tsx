@@ -3,17 +3,20 @@
 import React from "react";
 import Input from "@/components/ui/Input";
 import { CheckoutFormData } from "./checkoutSchema";
+import Button from "@/components/ui/Button";
 
 interface PaymentMethodProps {
   formData: CheckoutFormData;
   errors: Partial<Record<keyof CheckoutFormData, string>>;
   onChange: (field: keyof CheckoutFormData, value: string) => void;
+  isSubmitting: boolean;
 }
 
 export default function PaymentMethod({
   formData,
   errors,
   onChange,
+  isSubmitting,
 }: PaymentMethodProps) {
   // Format card number with spaces (4 4 4 4)
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,21 +41,21 @@ export default function PaymentMethod({
   };
 
   return (
-    <div className="w-full bg-[#151515] p-4 md:p-6">
+    <div className="w-full bg-[#151515] pt-4 md:pt-6">
       {/* Title */}
-      <h2 className="text-[16px] md:text-[20px] font-[700] text-platinum font-inter tracking-tight mb-5">
+      <h2 className="px-4 md:px-6 text-[20px] font-[700] text-platinum font-montserrat tracking-tight mb-7">
         Payment Method
       </h2>
 
       {/* Payment Method Selector Pills */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="px-4 md:px-6 grid grid-cols-3 gap-3 mb-6">
         <button
           type="button"
           onClick={() => onChange("paymentMethod", "credit_card")}
-          className={`h-[48px] rounded-[6px] font-inter text-[14px] md:text-[16px] font-[600] transition-all cursor-pointer flex items-center justify-center ${
+          className={`h-[48px] rounded-[8px] text-primary font-inter text-[14px] md:text-[20px] font-[600] transition-all cursor-pointer flex items-center justify-center ${
             formData.paymentMethod === "credit_card"
-              ? "border border-primary bg-transparent text-platinum shadow-[0_0_12px_rgba(197,160,89,0.2)]"
-              : "border border-gold-deep bg-transparent text-silver hover:border-primary/50"
+              ? "border border-primary bg-transparent shadow-[0_0_12px_rgba(197,160,89,0.2)]"
+              : "border border-gold-deep bg-transparent hover:border-primary/50"
           }`}
         >
           Credit Card
@@ -60,10 +63,10 @@ export default function PaymentMethod({
         <button
           type="button"
           onClick={() => onChange("paymentMethod", "apple_pay")}
-          className={`h-[48px] rounded-[6px] font-inter text-[14px] md:text-[16px] font-[600] transition-all cursor-pointer flex items-center justify-center ${
+          className={`h-[48px] rounded-[8px] text-primary font-inter text-[14px] md:text-[20px] font-[600] transition-all cursor-pointer flex items-center justify-center ${
             formData.paymentMethod === "apple_pay"
-              ? "border border-primary bg-transparent text-platinum shadow-[0_0_12px_rgba(197,160,89,0.2)]"
-              : "border border-gold-deep bg-transparent text-silver hover:border-primary/50"
+              ? "border border-primary bg-transparent shadow-[0_0_12px_rgba(197,160,89,0.2)]"
+              : "border border-gold-deep bg-transparent hover:border-primary/50"
           }`}
         >
           Apple Pay
@@ -71,10 +74,10 @@ export default function PaymentMethod({
         <button
           type="button"
           onClick={() => onChange("paymentMethod", "paypal")}
-          className={`h-[48px] rounded-[6px] font-inter text-[14px] md:text-[16px] font-[600] transition-all cursor-pointer flex items-center justify-center ${
+          className={`h-[48px] rounded-[8px] text-primary font-inter text-[14px] md:text-[20px] font-[600] transition-all cursor-pointer flex items-center justify-center ${
             formData.paymentMethod === "paypal"
-              ? "border border-primary bg-transparent text-platinum shadow-[0_0_12px_rgba(197,160,89,0.2)]"
-              : "border border-gold-deep bg-transparent text-silver hover:border-primary/50"
+              ? "border border-primary bg-transparent shadow-[0_0_12px_rgba(197,160,89,0.2)]"
+              : "border border-gold-deep bg-transparent hover:border-primary/50"
           }`}
         >
           Paypal
@@ -83,7 +86,7 @@ export default function PaymentMethod({
 
       {/* Credit Card Input Form */}
       {formData.paymentMethod === "credit_card" && (
-        <div className="space-y-4 animate-in fade-in duration-200">
+        <div className="px-4 md:px-6 space-y-6 animate-in fade-in duration-200">
           {/* Card Number */}
           <Input
             label="Card Number"
@@ -128,16 +131,27 @@ export default function PaymentMethod({
 
       {/* Alternative Gateways Notice */}
       {formData.paymentMethod === "apple_pay" && (
-        <div className="py-6 px-4 rounded-[8px] bg-transparent border border-gold-deep text-center text-silver font-inter text-[14px]">
+        <div className="mx-4 md:mx-6 py-6 px-4 rounded-[8px] bg-transparent border border-gold-deep text-center text-silver font-inter text-[14px]">
           You will be prompted to authenticate with Apple Pay upon clicking Confirm Reservation.
         </div>
       )}
 
       {formData.paymentMethod === "paypal" && (
-        <div className="py-6 px-4 rounded-[8px] bg-transparent border border-gold-deep text-center text-silver font-inter text-[14px]">
+        <div className="mx-4 md:mx-6 py-6 px-4 rounded-[8px] bg-transparent border border-gold-deep text-center text-silver font-inter text-[14px]">
           You will be redirected to PayPal to complete your payment securely.
         </div>
       )}
+
+      {/* Confirm Reservation CTA Button */}
+      <div className="pt-20">
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full h-[52px] px-8 rounded-[8px] bg-gradient-primary font-inter font-[600] text-[16px] md:text-[20px] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
+        >
+          {isSubmitting ? "Confirming..." : "Confirm Reservation"}
+        </Button>
+      </div>
     </div>
   );
 }

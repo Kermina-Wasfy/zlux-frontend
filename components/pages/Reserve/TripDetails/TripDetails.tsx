@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import { toast } from "sonner";
 import LocationInput from "@/components/ui/LocationInput";
@@ -30,11 +30,20 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
   const [errors, setErrors] = useState<Partial<Record<keyof TripDetailsFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Active location query for Google Map
+  // Active location query for Google Map (debounced so the
+  // iframe doesn't reload on every keystroke)
   const mapLocation =
     formData.pickupLocation.trim() ||
     formData.destination.trim() ||
     "Los Angeles, CA, USA";
+
+  const [mapQuery, setMapQuery] = useState(mapLocation);
+  const mapTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    mapTimer.current = setTimeout(() => setMapQuery(mapLocation), 600);
+    return () => clearTimeout(mapTimer.current);
+  }, [mapLocation]);
 
   const handleChange = (field: keyof TripDetailsFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -139,7 +148,7 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
               {/* Action Button */}
               <div className="pt-4 sm:pt-8 mt-auto">
                 <Button
-                  className="w-full h-[52px] px-8 rounded-[8px] bg-gradient-primary font-inter font-[600] text-[16px] md:text-[20px] transition-all duration-300 hover:brightness-110 hover:shadow-[0_4px_25px_rgba(197,160,89,0.35)] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
+                  className="w-full h-[52px] px-8 rounded-[8px] bg-gradient-primary font-inter font-[600] text-[16px] md:text-[20px] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
                  >
                   {isSubmitting ? "Processing..." : "Continue To Vehicle"}
                 </Button>
@@ -154,7 +163,7 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
               <iframe
                 title="Google Maps Location"
                 src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                  mapLocation
+                  mapQuery
                 )}&t=m&z=13&ie=UTF8&iwloc=&output=embed`}
                 className="w-full h-full border-0 filter brightness-95 contrast-105"
                 loading="lazy"

@@ -9,6 +9,7 @@ import React, {
   useCallback,
 } from "react";
 import { ChevronDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface Option {
   value: string;
@@ -17,6 +18,7 @@ export interface Option {
 
 export interface SelectProps {
   label?: string;
+  labelClassName?: string;
   error?: string;
   options: Option[];
   placeholder?: string;
@@ -34,6 +36,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
     {
       label,
+      labelClassName,
       error,
       options,
       placeholder = "Select an option",
@@ -125,7 +128,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={buttonId}
-            className="text-primary text-[16px] md:text-[20px] font-[500] font-inter mb-2 tracking-wide"
+            className={cn(
+              "text-primary text-[16px] md:text-[20px] font-[500] font-inter mb-2 tracking-wide",
+              labelClassName
+            )}
           >
             {label}
           </label>
@@ -142,29 +148,26 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             onClick={() => setOpen((o) => !o)}
             onKeyDown={handleTriggerKeyDown}
             onBlur={() => close()}
-            className={`flex items-center w-full h-[52px] px-4 pr-11 overflow-hidden rounded-[8px] bg-transparent text-[#E5E4E2] font-inter text-[16px] border border-gold-deep transition-all duration-200 outline-none cursor-pointer text-left ${
-              error
+            className={`flex items-center w-full h-[52px] px-4 pr-11 overflow-hidden rounded-[8px] bg-transparent text-[#E5E4E2] font-inter text-[16px] border border-gold-deep transition-all duration-200 outline-none cursor-pointer text-left ${error
                 ? "border-red-500/80 focus:border-red-500 focus:ring-1 focus:ring-red-500/30"
                 : open
-                ? "border-[#C5A059] ring-1 ring-[#C5A059]/30"
-                : "border-[#453823]/80 hover:border-[#C5A059]/60 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059]/30"
-            } ${className}`}
+                  ? "border-[#C5A059] ring-1 ring-[#C5A059]/30"
+                  : "border-[#453823]/80 hover:border-[#C5A059]/60 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059]/30"
+              } ${className}`}
           >
             <span
-              className={`truncate ${
-                selectedOption
+              className={`truncate ${selectedOption
                   ? "text-[#E5E4E2]"
                   : "text-muted placeholder:font-[400] text-[#6D6D6D]"
-              }`}
+                }`}
             >
               {selectedOption ? selectedOption.label : placeholder}
             </span>
           </button>
 
           <div
-            className={`absolute right-3.5 flex items-center pointer-events-none text-[#C5A059] transition-transform duration-200 ${
-              open ? "rotate-180" : ""
-            }`}
+            className={`absolute right-3.5 flex items-center pointer-events-none text-[#C5A059] transition-transform duration-200 ${open ? "rotate-180" : ""
+              }`}
           >
             <ChevronDown className="w-5 h-5" />
           </div>
@@ -187,11 +190,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                     id={`${buttonId}-opt-${option.value}`}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => selectOption(option)}
-                    className={`flex items-center justify-between gap-3 px-4 py-2.5 text-[12px] md:text-[16px] font-inter cursor-pointer transition-colors duration-150 ${
-                      isSelected
+                    className={`flex items-center justify-between gap-3 px-4 py-2.5 text-[12px] md:text-[16px] font-inter cursor-pointer transition-colors duration-150 ${isSelected
                         ? "bg-[#C5A059] text-[#0D0D0D] font-[600]"
                         : "text-[#E5E4E2] hover:bg-[#2A2417]"
-                    }`}
+                      }`}
                   >
                     <span>{option.label}</span>
                     {isSelected && <Check className="w-4 h-4 shrink-0" />}

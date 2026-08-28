@@ -42,29 +42,29 @@ body {
 }
 
 /* Custom Gradient Utilities */
-.bg-gradient-primary {
+@utility bg-gradient-primary {
   background: linear-gradient(to right, #C5A059, #F8E387);
 }
 
-.bg-gradient-gold {
+@utility bg-gradient-gold {
   background: linear-gradient(to right, #C5A059, #F8E387);
 }
 
-.bg-gradient-secondary {
+@utility bg-gradient-secondary {
   background: linear-gradient(to right, #775A19, #F8E387, #775A19);
 }
 
-.bg-gradient-gold-tri {
+@utility bg-gradient-gold-tri {
   background: linear-gradient(to right, #775A19, #F8E387, #775A19);
 }
 
-.text-gradient-primary {
+@utility text-gradient-primary {
   background: linear-gradient(to right, #C5A059, #F8E387);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.text-gradient-secondary {
+@utility text-gradient-secondary {
   background: linear-gradient(to right, #775A19, #F8E387, #775A19);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

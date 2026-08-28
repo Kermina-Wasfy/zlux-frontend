@@ -50,7 +50,7 @@ export default function Herosection() {
           <div className="pt-12 md:pt-20">
             <Button
               href="/reserve"
-              className="px-8 py-2 text-[16px] md:text-[20px] hover:shadow-[0_4px_25px_rgba(197,160,89,0.35)]"
+              className="px-8 py-2 text-[16px] md:text-[20px]"
             >
               Reserve Now
             </Button>

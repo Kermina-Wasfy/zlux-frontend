@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import Button from "@/components/ui/Button";
 import PassengerInformation from "./PassengerInformation";
 import PaymentMethod from "./PaymentMethod";
 import BookingSummary, { BookingDetails } from "./BookingSummary";
@@ -18,6 +18,7 @@ export default function MainCheckout({
   initialBookingDetails,
   onConfirm,
 }: MainCheckoutProps) {
+  const router = useRouter();
   const [formData, setFormData] = useState<CheckoutFormData>({
     firstName: "",
     lastName: "",
@@ -70,6 +71,8 @@ export default function MainCheckout({
 
     if (onConfirm) {
       onConfirm(result.data);
+    } else {
+      router.push("/reserve/confirmation");
     }
     setIsSubmitting(false);
   };
@@ -91,7 +94,7 @@ export default function MainCheckout({
         <form onSubmit={handleSubmit} noValidate>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-20 items-start">
             {/* Left Column: Passenger Information & Payment Method */}
-            <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-6">
+            <div className="lg:col-span-7 xl:col-span-7 flex flex-col lg:gap-12 gap-8">
               <PassengerInformation
                 formData={formData}
                 errors={errors}
@@ -102,20 +105,12 @@ export default function MainCheckout({
                 formData={formData}
                 errors={errors}
                 onChange={handleChange}
+                isSubmitting={isSubmitting}
               />
-
-              {/* Confirm Reservation CTA Button */}
-              <div className="pt-2">
-                <Button
-                  className="w-full h-[52px] px-8 rounded-[8px] bg-gradient-primary font-inter font-[600] text-[16px] md:text-[20px] transition-all duration-300 hover:brightness-110 hover:shadow-[0_4px_25px_rgba(197,160,89,0.35)] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
-                >
-                  {isSubmitting ? "Confirming..." : "Confirm Reservation"}
-                </Button>
-              </div>
             </div>
 
             {/* Right Column: Booking Summary & Side Note */}
-            <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-5">
+            <div className="lg:col-span-5 xl:col-span-5 flex flex-col lg:gap-5 lg:block hidden">
               <BookingSummary details={initialBookingDetails} />
               <SideNote />
             </div>
