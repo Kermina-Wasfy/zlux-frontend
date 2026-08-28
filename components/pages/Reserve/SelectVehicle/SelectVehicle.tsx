@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import SelectVehicleCard, { Vehicle } from "@/components/general/Cards/SelectVehicleCard";
 import Button from "@/components/ui/Button";
 import { toast } from "sonner";
+import { persistVehicle } from "@/shared/booking";
 
 export const VEHICLES_DATA: Vehicle[] = [
   {
@@ -80,6 +81,7 @@ export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
       return;
     }
     toast.success(`Selected ${selectedVehicle.name}! Proceeding to checkout.`);
+    persistVehicle(selectedVehicle);
     if (onContinue) {
       onContinue(selectedVehicle);
     } else {

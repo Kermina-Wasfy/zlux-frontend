@@ -13,6 +13,7 @@ import {
   SERVICE_TYPE_OPTIONS,
 } from "./tripSchema";
 import Button from "@/components/ui/Button";
+import { persistTripDetails } from "@/shared/booking";
 
 interface TripDetailsProps {
   onContinue?: (data: TripDetailsFormData) => void;
@@ -76,6 +77,8 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
 
     setErrors({});
     toast.success("Trip details confirmed! Proceeding to vehicle selection.");
+
+    persistTripDetails(result.data);
 
     if (onContinue) {
       onContinue(result.data);
@@ -148,6 +151,7 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
               {/* Action Button */}
               <div className="pt-4 sm:pt-8 mt-auto">
                 <Button
+                  type="submit"
                   className="w-full h-[52px] px-8 rounded-[8px] bg-gradient-primary font-inter font-[600] text-[16px] md:text-[20px] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
                  >
                   {isSubmitting ? "Processing..." : "Continue To Vehicle"}

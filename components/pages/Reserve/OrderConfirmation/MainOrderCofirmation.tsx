@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import BookingSummary, { BookingDetails } from "../Checkout/BookingSummary";
 import BookingReferenceCard from "./BookingReferenceCard";
 import WhatHappensNext from "./WhatHappensNext";
 import Button from "@/components/ui/Button";
+import { buildBookingDetails } from "@/shared/booking";
 
 interface MainOrderCofirmationProps {
   bookingReference?: string;
@@ -15,8 +16,14 @@ interface MainOrderCofirmationProps {
 
 export default function MainOrderCofirmation({
   bookingReference = "APX-L9AG-7728",
-  bookingDetails,
+  bookingDetails: bookingDetailsProp,
 }: MainOrderCofirmationProps) {
+  const [bookingDetails, setBookingDetails] = useState<BookingDetails | undefined>(bookingDetailsProp);
+
+  useEffect(() => {
+    const stored = buildBookingDetails();
+    setBookingDetails(stored ?? bookingDetailsProp);
+  }, [bookingDetailsProp]);
   return (
     <section className="w-full min-h-screen bg-[#0D0D0D] py-12 md:py-16 px-4 flex flex-col items-center justify-center">
       <div className="w-full mx-auto flex flex-col items-center">

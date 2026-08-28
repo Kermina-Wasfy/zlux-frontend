@@ -155,3 +155,16 @@ input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
+
+/* Keep dark theme when the browser autofills saved values */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #E5E4E2;
+  -webkit-box-shadow: 0 0 0 1000px #0D0D0D inset;
+  caret-color: #E5E4E2;
+  transition: background-color 9999s ease-in-out 0s;
+}

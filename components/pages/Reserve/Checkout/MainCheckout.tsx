@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import PassengerInformation from "./PassengerInformation";
@@ -8,6 +8,7 @@ import PaymentMethod from "./PaymentMethod";
 import BookingSummary, { BookingDetails } from "./BookingSummary";
 import SideNote from "./SideNote";
 import { checkoutSchema, CheckoutFormData } from "./checkoutSchema";
+import { buildBookingDetails } from "@/shared/booking";
 
 interface MainCheckoutProps {
   initialBookingDetails?: BookingDetails;
@@ -36,6 +37,12 @@ export default function MainCheckout({
 
   const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState<BookingDetails | undefined>(initialBookingDetails);
+
+  useEffect(() => {
+    const stored = buildBookingDetails();
+    setBookingDetails(stored ?? initialBookingDetails);
+  }, [initialBookingDetails]);
 
   const handleChange = (field: keyof CheckoutFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -111,7 +118,7 @@ export default function MainCheckout({
 
             {/* Right Column: Booking Summary & Side Note */}
             <div className="lg:col-span-5 xl:col-span-5 flex flex-col lg:gap-5 lg:block hidden">
-              <BookingSummary details={initialBookingDetails} />
+              <BookingSummary details={bookingDetails} />
               <SideNote />
             </div>
           </div>
