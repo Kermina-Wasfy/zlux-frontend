@@ -36,7 +36,6 @@ export default function BookingSummary({
 
   return (
     <div className="w-full bg-[#151515] pb-4 md:pb-6 border border-gold-deep flex flex-col">
-      {/* Vehicle Image */}
       <div className="w-full h-[180px] sm:h-[210px] md:h-[240px] relative overflow-hidden bg-[#1A1A1A] mb-5">
         {vehicleImage && (
           <Image
@@ -51,12 +50,10 @@ export default function BookingSummary({
         )}
       </div>
 
-      {/* Booking Summary Heading */}
       <h2 className="px-4 md:px-6 text-[20px] md:text-[24px] font-[600] text-primary font-montserrat tracking-tight mb-2">
         Booking Summary
       </h2>
 
-      {/* Vehicle Info */}
       <div className="px-4 md:px-6 mb-4">
         <h3 className="text-[16px] md:text-[24px] font-[700] text-[#E5E4E2] font-inter tracking-tight">
           {vehicleName}

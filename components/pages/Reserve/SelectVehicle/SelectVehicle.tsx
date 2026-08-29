@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SelectVehicleCard, { Vehicle } from "@/components/general/Cards/SelectVehicleCard";
 import VehicleCardSkeleton from "@/components/general/Skeletons/VehicleCardSkeleton";
@@ -107,7 +107,6 @@ export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
           </div>
         )}
 
-        {/* Vehicle Cards List */}
         <div className="flex flex-col gap-4 md:gap-8 md:px-12">
           {noTrip ? (
             <div className="flex flex-col items-center py-16 gap-4 text-center bg-[#151515] border border-gold-deep rounded-[8px] p-6 mt-10">
@@ -149,7 +148,6 @@ export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
           )}
         </div>
 
-        {/* Action Button: Continue To Checkout */}
         {!noTrip && !isLoading && !loadError && vehicles.length > 0 && (
           <div className="pt-8 md:pt-10 flex justify-end md:mr-12">
             <Button

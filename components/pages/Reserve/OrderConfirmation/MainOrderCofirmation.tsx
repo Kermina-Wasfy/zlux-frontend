@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import BookingSummary, { BookingDetails } from "../Checkout/BookingSummary";
@@ -58,22 +58,18 @@ export default function MainOrderCofirmation({
           <Check className="w-7 h-7 md:w-8 md:h-8 text-primary" strokeWidth={2} />
         </div>
 
-        {/* Small Category / Status Title */}
         <span className="text-[16px] md:text-[32px] font-[600] text-primary font-montserrat tracking-tight mt-6 mb-2">
           Reservation Confirmed
         </span>
 
-        {/* Main Heading */}
         <h1 className="text-[20px] sm:text-[32px] md:text-[48px] font-[700] text-[#E5E4E2] font-montserrat tracking-tight text-center mb-1">
           Your Chauffeur is Reserved.
         </h1>
 
-        {/* Description Subtitle */}
         <p className="text-[16px] md:text-[20px] text-[#C7C6C4] font-inter font-[700] text-center leading-relaxed mb-14">
           A Confirmation Has Been Sent To Your Email. Your Driver Will Contact You 2 Hours Before Pickup.
         </p>
 
-        {/* 1. Booking Reference Box */}
         <BookingReferenceCard reference={reference} className="mb-10" />
 
         {/* 2. Booking Summary Card (reused from Checkout, with showTotal={false}) */}
@@ -96,10 +92,8 @@ export default function MainOrderCofirmation({
           )}
         </div>
 
-        {/* 3. What Happens Next Card */}
         <WhatHappensNext className="mb-6" />
 
-        {/* 4. Action Buttons (Back To Home & Reserve Now) */}
         <div className="max-w-[750px] grid grid-cols-2 gap-4 w-full">
           <Link
             href="/"

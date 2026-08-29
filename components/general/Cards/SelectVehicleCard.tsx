@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { User, Briefcase } from "lucide-react";
 
 export interface Vehicle {
     id: string;
@@ -41,7 +40,7 @@ export default function SelectVehicleCard({
                 }
         ${className}`}
         >
-            {/* Left Info: Image + Specifications */}
+            {/* Left Info*/}
             <div className="p-3 sm:p-5 flex items-stretch gap-3 sm:gap-8 flex-1 min-w-0">
                 {/* Vehicle Image */}
                 <div className="w-[110px] sm:w-[160px] md:w-[190px] h-full self-stretch relative overflow-hidden bg-[#1A1A1A] flex-shrink-0">
@@ -68,12 +67,10 @@ export default function SelectVehicleCard({
                     {/* Specs Row */}
                     <div className="flex flex-wrap items-center gap-3 sm:gap-5 font-[500] text-[8px] sm:text-[14px] md:text-[16px] font-inter text-[#91918F]">
                         <div className="flex items-center gap-1.5">
-                            {/* <User className="w-4 h-4 text-primary" /> */}
                             <Image src="/passengers-icon.svg" alt="Passengers Icon" width={20} height={20} className="md:h-[20px] md:w-[20px] h-[10px] w-[10px] text-primary" />
                             <span>{vehicle.passengers} Passengers</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            {/* <Briefcase className="w-4 h-4 text-primary" /> */}
                             <Image src="/bags-icon.svg" alt="Bags Icon" width={20} height={20} className="md:h-[20px] md:w-[20px] h-[10px] w-[10px] text-primary" />
 
                             <span>{vehicle.bags} Bags</span>
@@ -85,7 +82,7 @@ export default function SelectVehicleCard({
                 </div>
             </div>
 
-            {/* Right Column: Price & Radio Selection */}
+            {/* Right Column */}
             <div className={`
                 flex items-center
                    ${isSelected

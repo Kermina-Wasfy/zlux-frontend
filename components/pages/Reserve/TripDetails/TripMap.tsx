@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { MapPin, Navigation, X, Loader2, Compass } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { MapPin, X, Loader2 } from "lucide-react";
 import type { LocationData } from "./tripSchema";
 import { reverseGeocode, type GeocodeResult } from "@/lib/geocoding";
 
@@ -32,13 +32,9 @@ export default function TripMap({
   className = "",
 }: TripMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstanceRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pickupMarkerRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const destMarkerRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const polylineRef = useRef<any>(null);
 
   const [isMapReady, setIsMapReady] = useState(false);
@@ -282,7 +278,6 @@ export default function TripMap({
     <div
       className={`relative w-full flex-1 md:min-h-[440px] min-h-[340px] overflow-hidden ${className}`}
     >
-      {/* Leaflet Map Canvas (Normal Clean White Map) */}
       <div ref={mapContainerRef} className="w-full h-full min-h-[340px] md:min-h-[440px] z-0" />
 
       {/* Clean Floating Suggestions Overlay on the Map (desktop only; mobile uses the form dropdown) */}

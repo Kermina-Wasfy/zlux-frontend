@@ -1,7 +1,3 @@
-"use client";
-
-import React from "react";
-
 export interface NextStepItem {
   id: string;
   stepNumber: string;
@@ -53,7 +49,6 @@ export default function WhatHappensNext({
     <div
       className={`max-w-[750px] w-full bg-[#151515] border border-gold-deep p-6 md:p-8 flex flex-col ${className}`}
     >
-      {/* Card Heading */}
       <h3 className="text-[20px] md:text-[32px] font-[600] text-primary font-montserrat tracking-tight mb-4">
         What Happens Next
       </h3>

@@ -8,7 +8,6 @@ export interface ConfirmPaymentPayload {
 export interface ConfirmPaymentResponse {
   message?: string;
   status?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   booking?: any;
 }
 

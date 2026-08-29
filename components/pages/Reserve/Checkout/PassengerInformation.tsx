@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import { CheckoutFormData } from "./checkoutSchema";
@@ -27,7 +24,6 @@ export default function PassengerInformation({
 }: PassengerInformationProps) {
   return (
     <div className="w-full bg-[#151515] p-4 md:p-6">
-      {/* Title */}
       <h2 className="text-[20px] font-[700] text-platinum font-montserrat tracking-tight mb-7">
         Passenger Information
       </h2>

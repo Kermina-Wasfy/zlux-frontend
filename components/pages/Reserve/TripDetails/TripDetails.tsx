@@ -215,7 +215,6 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
   return (
     <section className="w-full pb-12 pt-4 bg-[#0D0D0D]">
       <div className="container mx-auto">
-        {/* Section Heading */}
         <div className="mb-8 md:mb-10">
           <h1 className="text-[20px] md:text-[40px] font-[600] text-primary font-montserrat tracking-tight mb-3">
             Trip Details
@@ -225,7 +224,6 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
           </p>
         </div>
 
-        {/* Main Content Grid: Form (Left) & OpenStreetMap Map (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-stretch">
           {/* Left Form Column */}
           <div className="lg:col-span-6 xl:col-span-7 flex md:px-5">
@@ -264,7 +262,7 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
                 />
               </div>
 
-              {/* Mobile: Suggestions shown as a dropdown (styled like Select) instead of on the map */}
+              {/* Mobile: Suggestions */}
               {activeSearch &&
                 (activeSearch.isLoading || (activeSearch.suggestions && activeSearch.suggestions.length > 0)) && (
                   <div className="lg:hidden">
@@ -367,7 +365,6 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
                 />
               </div>
 
-              {/* Action Button */}
               <div className="pt-4 sm:pt-8 mt-auto">
                 <Button
                   type="submit"

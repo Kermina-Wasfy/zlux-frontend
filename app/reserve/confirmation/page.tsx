@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import MainOrderCofirmation from "@/components/pages/Reserve/OrderConfirmation/MainOrderCofirmation";
 
 export default function OrderConfirmationPage() {

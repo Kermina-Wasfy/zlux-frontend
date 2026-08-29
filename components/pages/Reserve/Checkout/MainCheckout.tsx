@@ -238,7 +238,6 @@ function MainCheckoutForm({
   return (
     <section className="w-full pb-16 pt-4 bg-[#0D0D0D]">
       <div className="container mx-auto">
-        {/* Section Heading */}
         <div className="mb-8 md:mb-10">
           <h1 className="text-[20px] md:text-[40px] font-[600] text-primary font-montserrat tracking-tight mb-3">
             Passenger &amp; Payment
