@@ -24,29 +24,31 @@ export default function BookingSummary({
   details,
   showTotal = true,
 }: BookingSummaryProps) {
-  const vehicleName = details?.vehicleName || "Lincoln Navigator";
-  const vehicleCapacity = details?.vehicleCapacity || "Up To 3 Passengers";
-  const vehicleImage = details?.vehicleImage || "/vehicle5.jpg";
+  const vehicleName = details?.vehicleName;
+  const vehicleCapacity = details?.vehicleCapacity;
+  const vehicleImage = details?.vehicleImage;
   const pickup = details?.pickup || "—";
   const destination = details?.destination || "—";
   const date = details?.date || "—";
   const time = details?.time || "—";
   const service = details?.service || "—";
-  const total = details?.estimatedTotal || "$215";
+  const total = details?.estimatedTotal || "$0.00";
 
   return (
     <div className="w-full bg-[#151515] pb-4 md:pb-6 border border-gold-deep flex flex-col">
       {/* Vehicle Image */}
       <div className="w-full h-[180px] sm:h-[210px] md:h-[240px] relative overflow-hidden bg-[#1A1A1A] mb-5">
-        <Image
-          src={vehicleImage}
-          alt={vehicleName}
-          fill
-          priority
-          unoptimized
-          sizes="(max-width: 768px) 100vw, 450px"
-          className="object-cover object-center"
-        />
+        {vehicleImage && (
+          <Image
+            src={vehicleImage}
+            alt={vehicleName || "Vehicle"}
+            fill
+            priority
+            unoptimized
+            sizes="(max-width: 768px) 100vw, 450px"
+            className="object-cover object-center"
+          />
+        )}
       </div>
 
       {/* Booking Summary Heading */}
