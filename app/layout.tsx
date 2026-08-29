@@ -22,7 +22,7 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "ZLUX | Premium Private Chauffeur Service",
   icons: {
-    icon: "/logo.svg",
+    icon: "/logoMobile.svg",
   },
   description:
     "Experience Seamless, Punctual, And Executive Transportation Across The US. Your Premium Ride Is Just A Click Away.",
