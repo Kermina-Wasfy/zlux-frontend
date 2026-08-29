@@ -6,10 +6,15 @@ import {
   useStripe,
   PaymentRequestButtonElement,
 } from "@stripe/react-stripe-js";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import Input from "@/components/ui/Input";
 import { CheckoutFormData } from "./checkoutSchema";
 import Button from "@/components/ui/Button";
 import { Loader2, ShieldCheck, AlertCircle, ShieldAlert, CreditCard, ExternalLink } from "lucide-react";
+
+const PAYPAL_CLIENT_ID =
+  process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID?.trim() ||
+  "BAAs34JruzzDy07jKYBE8SsalOVWRj71771hueMPb9jPAPcbaSO74bkBGwtsmrmwbQYjSot32QpFy54raQ";
 
 interface PaymentMethodProps {
   formData: CheckoutFormData;
@@ -18,8 +23,12 @@ interface PaymentMethodProps {
   isSubmitting: boolean;
   estimatedTotal?: number;
   clientSecret?: string | null;
+  bookingId?: string;
   onApplePaySuccess?: (paymentIntentId: string) => void;
   onApplePayError?: (message: string) => void;
+  onPayPalSuccess?: (orderId?: string) => void;
+  onPayPalError?: (message: string) => void;
+  onBeforePayment?: () => Promise<boolean>;
 }
 
 const CARD_ELEMENT_OPTIONS = {
@@ -49,8 +58,12 @@ export default function PaymentMethod({
   isSubmitting,
   estimatedTotal = 150,
   clientSecret,
+  bookingId,
   onApplePaySuccess,
   onApplePayError,
+  onPayPalSuccess,
+  onPayPalError,
+  onBeforePayment,
 }: PaymentMethodProps) {
   const stripe = useStripe();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,6 +83,15 @@ export default function PaymentMethod({
 
   const onApplePayErrorRef = useRef(onApplePayError);
   onApplePayErrorRef.current = onApplePayError;
+
+  const onPayPalSuccessRef = useRef(onPayPalSuccess);
+  onPayPalSuccessRef.current = onPayPalSuccess;
+
+  const onPayPalErrorRef = useRef(onPayPalError);
+  onPayPalErrorRef.current = onPayPalError;
+
+  const onBeforePaymentRef = useRef(onBeforePayment);
+  onBeforePaymentRef.current = onBeforePayment;
 
   // Setup Apple Pay PaymentRequest once when stripe is initialized
   useEffect(() => {
@@ -418,10 +440,128 @@ export default function PaymentMethod({
         </div>
       )}
 
-      {/* PayPal Notice */}
+      {/* PayPal Integration */}
       {formData.paymentMethod === "paypal" && (
-        <div className="mx-4 md:mx-6 py-6 px-4 rounded-[8px] bg-transparent border border-gold-deep text-center text-silver font-inter text-[14px]">
-          You will be redirected to PayPal to complete your payment securely.
+        <div className="px-4 md:px-6 py-4 animate-in fade-in duration-200">
+          <div className="mb-4">
+            <p className="text-silver font-inter text-[14px]">
+              Click the PayPal button below to complete your payment securely with your PayPal account or debit/credit card.
+            </p>
+          </div>
+          <div className="w-full max-w-[480px] mx-auto min-h-[150px]">
+            <PayPalScriptProvider
+              options={{
+                clientId: PAYPAL_CLIENT_ID,
+                "client-id": PAYPAL_CLIENT_ID,
+                currency: "USD",
+                intent: "capture",
+              }}
+            >
+              <PayPalButtons
+                style={{
+                  layout: "vertical",
+                  color: "gold",
+                  shape: "rect",
+                  label: "pay",
+                  height: 48,
+                }}
+                onClick={async (data, actions) => {
+                  if (onBeforePaymentRef.current) {
+                    const isValid = await onBeforePaymentRef.current();
+                    if (!isValid) {
+                      return actions.reject();
+                    }
+                  }
+                  return actions.resolve();
+                }}
+                createOrder={async (data, actions) => {
+                  // 1. Try to request Order ID from backend if endpoint is available
+                  try {
+                    const res = await fetch("/api/paypal/create-order", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        amount: estimatedTotal || 150,
+                        bookingId,
+                      }),
+                    });
+                    if (res.ok) {
+                      const resData = await res.json();
+                      if (resData?.id) {
+                        return resData.id;
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(
+                      "Backend /api/paypal/create-order not reachable, falling back to client-side order creation:",
+                      err
+                    );
+                  }
+
+                  // 2. Client-side fallback if backend endpoint is not implemented
+                  return actions.order.create({
+                    intent: "CAPTURE",
+                    purchase_units: [
+                      {
+                        description: "ZLUX Private Chauffeur Reservation",
+                        amount: {
+                          currency_code: "USD",
+                          value: Number(estimatedTotal || 150).toFixed(2),
+                        },
+                      },
+                    ],
+                  });
+                }}
+                onApprove={async (data, actions) => {
+                  // 1. Try to verify/capture with backend if endpoint is available
+                  try {
+                    const res = await fetch("/api/paypal/capture-order", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        orderID: data.orderID,
+                        bookingId,
+                      }),
+                    });
+                    if (res.ok) {
+                      const result = await res.json();
+                      if (result.status === "success" || result.status === "COMPLETED") {
+                        onPayPalSuccessRef.current?.(data.orderID);
+                        return;
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(
+                      "Backend /api/paypal/capture-order not reachable, executing client-side capture:",
+                      err
+                    );
+                  }
+
+                  // 2. Client-side fallback capture
+                  try {
+                    if (actions.order) {
+                      await actions.order.capture();
+                    }
+                    onPayPalSuccessRef.current?.(data.orderID);
+                  } catch (captureErr: unknown) {
+                    console.error("PayPal capture error:", captureErr);
+                    const errorMsg =
+                      captureErr instanceof Error
+                        ? captureErr.message
+                        : "فشلت عملية الدفع عبر PayPal";
+                    onPayPalErrorRef.current?.(errorMsg);
+                  }
+                }}
+                onError={(err) => {
+                  console.error("PayPal error:", err);
+                  onPayPalErrorRef.current?.("فشلت عملية الدفع عبر PayPal");
+                }}
+                onCancel={() => {
+                  console.info("PayPal checkout was cancelled by user.");
+                }}
+              />
+            </PayPalScriptProvider>
+          </div>
         </div>
       )}
 
@@ -436,6 +576,12 @@ export default function PaymentMethod({
             <CreditCard className="w-5 h-5 text-black" />
             <span>Switch to Credit Card to Continue</span>
           </Button>
+        ) : formData.paymentMethod === "paypal" ? (
+          <div className="p-4 rounded-[8px] bg-[#101010] border border-gold-deep/40 text-center">
+            <p className="text-silver font-inter text-[14px]">
+              Please complete your reservation by authorizing with the <strong className="text-primary">PayPal</strong> button above.
+            </p>
+          </div>
         ) : (
           <Button
             type="submit"

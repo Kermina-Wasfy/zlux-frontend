@@ -285,9 +285,9 @@ export default function TripMap({
       {/* Leaflet Map Canvas (Normal Clean White Map) */}
       <div ref={mapContainerRef} className="w-full h-full min-h-[340px] md:min-h-[440px] z-0" />
 
-      {/* Clean Floating Suggestions Overlay on the Map */}
+      {/* Clean Floating Suggestions Overlay on the Map (desktop only; mobile uses the form dropdown) */}
       {showSuggestionsOverlay && (
-        <div className="absolute top-3 left-3 right-3 max-w-[360px] z-[500] bg-white text-gray-900 rounded-[8px] shadow-lg p-3 border border-gray-200 animate-in fade-in duration-150">
+        <div className="hidden lg:block absolute top-3 left-3 right-3 max-w-[360px] z-[500] bg-white text-gray-900 rounded-[8px] shadow-lg p-3 border border-gray-200 animate-in fade-in duration-150">
           <div className="flex items-center justify-between pb-2 border-b border-gray-100 mb-2">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-gray-700" />

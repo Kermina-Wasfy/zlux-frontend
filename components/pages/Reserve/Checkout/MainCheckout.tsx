@@ -113,11 +113,8 @@ function MainCheckoutForm({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // 1. Validate Form Data
+  // Validate and save passenger information
+  const savePassengerInfo = async (): Promise<boolean> => {
     const result = checkoutSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof CheckoutFormData, string>> = {};
@@ -128,21 +125,18 @@ function MainCheckoutForm({
         }
       });
       setErrors(fieldErrors);
-      toast.error("Please fill in all required fields correctly.");
-      setIsSubmitting(false);
-      return;
+      toast.error("Please fill in all required passenger fields correctly.");
+      return false;
     }
 
     setErrors({});
 
     const booking = getBooking();
     if (!booking) {
-      setIsSubmitting(false);
       toast.error("No active booking found. Please start your reservation again.");
-      return;
+      return false;
     }
 
-    // 2. Save Passenger Information to Backend
     try {
       const updated = await updatePassengerInfo(booking._id, booking.accessToken, {
         firstName: result.data.firstName,
@@ -154,9 +148,28 @@ function MainCheckoutForm({
         specialRequests: result.data.specialRequests || "",
       });
       persistBooking(updated);
+      return true;
     } catch {
-      setIsSubmitting(false);
       toast.error("We couldn't save your passenger information. Please check your connection.");
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    // 1 & 2. Validate and Save Passenger Information
+    const saved = await savePassengerInfo();
+    if (!saved) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    const booking = getBooking();
+    if (!booking) {
+      setIsSubmitting(false);
+      toast.error("No active booking found. Please start your reservation again.");
       return;
     }
 
@@ -218,7 +231,7 @@ function MainCheckoutForm({
       toast.info("Please use the Apple Pay button above to authenticate with your device.");
     } else if (formData.paymentMethod === "paypal") {
       setIsSubmitting(false);
-      toast.info("PayPal integration will redirect shortly.");
+      toast.info("Please use the PayPal button above to complete your transaction.");
     }
   };
 
@@ -257,6 +270,8 @@ function MainCheckoutForm({
                     : parseFloat(String(bookingDetails?.estimatedTotal || "150").replace(/[^0-9.]/g, "")) || 150
                 }
                 clientSecret={clientSecret}
+                bookingId={getBooking()?._id}
+                onBeforePayment={savePassengerInfo}
                 onApplePaySuccess={(intentId) => {
                   const currentBooking = getBooking();
                   if (currentBooking) {
@@ -264,6 +279,15 @@ function MainCheckoutForm({
                   }
                 }}
                 onApplePayError={(msg) => {
+                  toast.error(msg);
+                }}
+                onPayPalSuccess={(orderId) => {
+                  const currentBooking = getBooking();
+                  if (currentBooking) {
+                    handlePaymentCompletion(orderId || "PAYPAL_ORDER", currentBooking);
+                  }
+                }}
+                onPayPalError={(msg) => {
                   toast.error(msg);
                 }}
               />

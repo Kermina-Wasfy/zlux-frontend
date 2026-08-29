@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, MapPin, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import LocationInput from "@/components/ui/LocationInput";
 import Select from "@/components/ui/Select";
@@ -263,6 +263,57 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
                   error={errors.destination}
                 />
               </div>
+
+              {/* Mobile: Suggestions shown as a dropdown (styled like Select) instead of on the map */}
+              {activeSearch &&
+                (activeSearch.isLoading || (activeSearch.suggestions && activeSearch.suggestions.length > 0)) && (
+                  <div className="lg:hidden">
+                    <div className="rounded-[8px] bg-[#141414] border border-gold-deep shadow-[0_12px_40px_rgba(0,0,0,0.6)] custom-scroll overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-gold-deep/40">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-[#C5A059]" />
+                          <span className="text-primary font-inter font-[500] text-[14px]">
+                            {activeSearch.field === "pickupLocation"
+                              ? "Pickup Suggestions"
+                              : "Destination Suggestions"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveSearch(null)}
+                          className="text-[#8C8273] hover:text-primary transition-colors cursor-pointer p-0.5"
+                          title="Close"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {activeSearch.isLoading ? (
+                        <div className="py-4 flex items-center justify-center gap-2 text-[#8C8273] font-inter text-[13px]">
+                          <Loader2 className="w-4 h-4 animate-spin text-[#C5A059]" />
+                          <span>Searching locations...</span>
+                        </div>
+                      ) : (
+                        <ul className="max-h-60 overflow-auto custom-scroll">
+                          {activeSearch.suggestions.map((s) => (
+                            <li
+                              key={s.id}
+                              onClick={() => handleSelectSuggestion(activeSearch.field, s)}
+                              className="flex flex-col gap-0.5 px-4 py-2.5 text-[14px] font-inter cursor-pointer transition-colors duration-150 text-[#E5E4E2] hover:bg-[#2A2417]"
+                            >
+                              <span className="truncate">{s.address}</span>
+                              {s.subtitle && (
+                                <span className="text-[12px] text-[#8C8273] truncate">
+                                  {s.subtitle}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
 
               {/* Row 2: Date, Pickup Time, Service Type */}
               <div className="grid grid-cols-3 gap-5">
