@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { MapPin } from "lucide-react";
+import React, { useState } from "react";
+import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import LocationInput from "@/components/ui/LocationInput";
 import Select from "@/components/ui/Select";
@@ -10,41 +10,96 @@ import TimePicker from "@/components/ui/TimePicker";
 import {
   tripDetailsSchema,
   TripDetailsFormData,
+  LocationData,
   SERVICE_TYPE_OPTIONS,
 } from "./tripSchema";
 import Button from "@/components/ui/Button";
 import { persistTripDetails } from "@/shared/booking";
+import TripMap, { ActiveSearchState } from "./TripMap";
+import type { GeocodeResult } from "@/lib/geocoding";
 
 interface TripDetailsProps {
   onContinue?: (data: TripDetailsFormData) => void;
 }
 
+interface CounterFieldProps {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  error?: string;
+  minusAriaLabel: string;
+  plusAriaLabel: string;
+  onMinus: () => void;
+  onPlus: () => void;
+}
+
+function CounterField({
+  label,
+  value,
+  min,
+  max,
+  error,
+  minusAriaLabel,
+  plusAriaLabel,
+  onMinus,
+  onPlus,
+}: CounterFieldProps) {
+  return (
+    <div>
+      <label className="text-primary text-[16px] md:text-[20px] font-[500] font-inter mb-2 tracking-wide block min-h-[48px] sm:min-h-0">
+        {label}
+      </label>
+      <div
+        className={`flex items-center h-[52px] rounded-[8px] bg-[#0D0D0D] border transition-all duration-200 ${
+          error ? "border-red-500/80" : "border-gold-deep hover:border-[#C5A059]/60"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={onMinus}
+          disabled={value <= min}
+          aria-label={minusAriaLabel}
+          className="h-full px-5 text-primary hover:text-[#F8E387] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <Minus className="w-5 h-5" />
+        </button>
+        <span className="flex-1 text-center text-[#E5E4E2] font-inter text-[16px] font-[600]">
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={onPlus}
+          disabled={value >= max}
+          aria-label={plusAriaLabel}
+          className="h-full px-5 text-primary hover:text-[#F8E387] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+      </div>
+      {error && (
+        <span className="text-red-400 text-[12px] mt-1.5 font-inter transition-opacity animate-in fade-in duration-150">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function TripDetails({ onContinue }: TripDetailsProps) {
   const [formData, setFormData] = useState<TripDetailsFormData>({
-    pickupLocation: "",
-    destination: "",
+    pickupLocation: null,
+    destination: null,
     date: "",
     pickupTime: "",
     serviceType: "",
+    passengers: 1,
+    estimatedHours: 1,
   });
 
+  const [activeSearch, setActiveSearch] = useState<ActiveSearchState | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof TripDetailsFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Active location query for Google Map (debounced so the
-  // iframe doesn't reload on every keystroke)
-  const mapLocation =
-    formData.pickupLocation.trim() ||
-    formData.destination.trim() ||
-    "Los Angeles, CA, USA";
-
-  const [mapQuery, setMapQuery] = useState(mapLocation);
-  const mapTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
-    mapTimer.current = setTimeout(() => setMapQuery(mapLocation), 600);
-    return () => clearTimeout(mapTimer.current);
-  }, [mapLocation]);
 
   const handleChange = (field: keyof TripDetailsFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -53,6 +108,77 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  const handlePassengersChange = (value: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      passengers: Math.min(16, Math.max(1, value)),
+    }));
+
+    if (errors.passengers) {
+      setErrors((prev) => ({ ...prev, passengers: undefined }));
+    }
+  };
+
+  const handleEstimatedHoursChange = (value: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      estimatedHours: Math.min(24, Math.max(1, value)),
+    }));
+
+    if (errors.estimatedHours) {
+      setErrors((prev) => ({ ...prev, estimatedHours: undefined }));
+    }
+  };
+
+  const handleLocationChange = (
+    field: "pickupLocation" | "destination",
+    location: LocationData | null
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: location }));
+
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleSearchChange = (
+    field: "pickupLocation" | "destination",
+    query: string,
+    suggestions: GeocodeResult[],
+    isLoading: boolean
+  ) => {
+    if (!query) {
+      if (activeSearch?.field === field) {
+        setActiveSearch(null);
+      }
+      return;
+    }
+
+    setActiveSearch({
+      field,
+      query,
+      suggestions,
+      isLoading,
+    });
+  };
+
+  const handleSelectSuggestion = (
+    field: "pickupLocation" | "destination",
+    location: LocationData
+  ) => {
+    handleLocationChange(field, location);
+    setActiveSearch(null);
+  };
+
+  const handleMapClick = (
+    field: "pickupLocation" | "destination",
+    location: LocationData
+  ) => {
+    handleLocationChange(field, location);
+    setActiveSearch(null);
+    toast.success(`Pinned ${field === "pickupLocation" ? "Pickup" : "Destination"} on map!`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,8 +225,8 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
           </p>
         </div>
 
-        {/* Main Content Grid: Form (Left) & Google Map (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-stretch">
+        {/* Main Content Grid: Form (Left) & OpenStreetMap Map (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-stretch">
           {/* Left Form Column */}
           <div className="lg:col-span-6 xl:col-span-7 flex md:px-5">
             <form onSubmit={handleSubmit} noValidate className="space-y-6 flex flex-col w-full">
@@ -110,14 +236,30 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
                   label="Pickup Location"
                   placeholder="Address, Airport , Or Hotel"
                   value={formData.pickupLocation}
-                  onChange={(v) => handleChange("pickupLocation", v)}
+                  proximity={
+                    formData.destination
+                      ? { lat: formData.destination.lat, lng: formData.destination.lng }
+                      : null
+                  }
+                  onChange={(location) => handleLocationChange("pickupLocation", location)}
+                  onSearchChange={(query, suggestions, isLoading) =>
+                    handleSearchChange("pickupLocation", query, suggestions, isLoading)
+                  }
                   error={errors.pickupLocation}
                 />
                 <LocationInput
                   label="Destination"
                   placeholder="Address, Airport , Or Hotel"
                   value={formData.destination}
-                  onChange={(v) => handleChange("destination", v)}
+                  proximity={
+                    formData.pickupLocation
+                      ? { lat: formData.pickupLocation.lat, lng: formData.pickupLocation.lng }
+                      : null
+                  }
+                  onChange={(location) => handleLocationChange("destination", location)}
+                  onSearchChange={(query, suggestions, isLoading) =>
+                    handleSearchChange("destination", query, suggestions, isLoading)
+                  }
                   error={errors.destination}
                 />
               </div>
@@ -148,74 +290,54 @@ export default function TripDetails({ onContinue }: TripDetailsProps) {
                 />
               </div>
 
+              {/* Row 3: Number of Passengers & Estimated Hours */}
+              <div className="grid grid-cols-2 gap-5">
+                <CounterField
+                  label="Number of Passengers"
+                  value={formData.passengers}
+                  min={1}
+                  max={16}
+                  error={errors.passengers}
+                  minusAriaLabel="Decrease passengers"
+                  plusAriaLabel="Increase passengers"
+                  onMinus={() => handlePassengersChange(formData.passengers - 1)}
+                  onPlus={() => handlePassengersChange(formData.passengers + 1)}
+                />
+                <CounterField
+                  label="Estimated Hours"
+                  value={formData.estimatedHours}
+                  min={1}
+                  max={24}
+                  error={errors.estimatedHours}
+                  minusAriaLabel="Decrease estimated hours"
+                  plusAriaLabel="Increase estimated hours"
+                  onMinus={() => handleEstimatedHoursChange(formData.estimatedHours - 1)}
+                  onPlus={() => handleEstimatedHoursChange(formData.estimatedHours + 1)}
+                />
+              </div>
+
               {/* Action Button */}
               <div className="pt-4 sm:pt-8 mt-auto">
                 <Button
                   type="submit"
                   className="w-full h-[52px] px-8 rounded-[8px] bg-gradient-primary font-inter font-[600] text-[16px] md:text-[20px] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
-                 >
+                >
                   {isSubmitting ? "Processing..." : "Continue To Vehicle"}
                 </Button>
               </div>
             </form>
           </div>
 
-          {/* Right Column: Google Map */}
+          {/* Right Column: OpenStreetMap Map with on-map suggestions & direct map clicking */}
           <div className="lg:col-span-6 xl:col-span-5 flex">
-            <div className="relative w-full flex-1 md:min-h-[400px]  min-h-[300px] overflow-hidden border border-[#3A301E] bg-[#141414] shadow-2xl">
-              {/* Google Maps Embed iframe */}
-              <iframe
-                title="Google Maps Location"
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                  mapQuery
-                )}&t=m&z=13&ie=UTF8&iwloc=&output=embed`}
-                className="w-full h-full border-0 filter brightness-95 contrast-105"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-
-              {/* Start marker: Pickup */}
-              {formData.pickupLocation.trim() && (
-                <div className="absolute top-3 left-3 pointer-events-none z-10 flex flex-col items-center">
-                  <div className="bg-[#1A1A1A]/95 text-white text-[11px] md:text-[12px] font-medium font-inter px-3 py-1.5 rounded-[6px] shadow-lg border border-black/40 flex items-center gap-1.5 max-w-[220px] backdrop-blur-sm">
-                    <span className="truncate">{formData.pickupLocation.trim()}</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-center">
-                    <div className="w-7 h-7 rounded-full bg-[#10B981] flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-black/20">
-                      <span className="text-white text-[10px] font-bold font-inter">A</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* End marker: Destination */}
-              {formData.destination.trim() && (
-                <div className="absolute bottom-3 right-3 pointer-events-none z-10 flex flex-col items-center">
-                  <div className="mt-1 flex items-center justify-center">
-                    <div className="w-7 h-7 rounded-full bg-[#EF4444] flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-black/20">
-                      <span className="text-white text-[10px] font-bold font-inter">B</span>
-                    </div>
-                  </div>
-                  <div className="bg-[#1A1A1A]/95 text-white text-[11px] md:text-[12px] font-medium font-inter px-3 py-1.5 rounded-[6px] shadow-lg border border-black/40 flex items-center gap-1.5 max-w-[220px] backdrop-blur-sm">
-                    <span className="truncate">{formData.destination.trim()}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Centered placeholder marker when no location selected yet */}
-              {!formData.pickupLocation.trim() && !formData.destination.trim() && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 pointer-events-none z-10 flex flex-col items-center">
-                  <div className="bg-[#1A1A1A]/95 text-white text-[12px] font-medium font-inter px-3 py-1.5 rounded-[6px] shadow-lg border border-black/40 flex items-center gap-1.5 whitespace-nowrap backdrop-blur-sm">
-                    <span>Los Angeles, CA, USA</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-full bg-[#3B82F6] flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-black/20 animate-bounce duration-1000">
-                      <MapPin className="w-4 h-4 text-white fill-white" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <TripMap
+              pickup={formData.pickupLocation}
+              destination={formData.destination}
+              activeSearch={activeSearch}
+              onSelectSuggestion={handleSelectSuggestion}
+              onMapClickLocation={handleMapClick}
+              onCloseSearch={() => setActiveSearch(null)}
+            />
           </div>
         </div>
       </div>

@@ -1,4 +1,11 @@
 @import "tailwindcss";
+@import "mapbox-gl/dist/mapbox-gl.css";
+@import "leaflet/dist/leaflet.css";
+
+/* Luxury Dark Filter for OpenStreetMap tiles - 100% Free, Zero API Keys, No Watermarks */
+.osm-dark-tiles .leaflet-tile {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.75) !important;
+}
 
 :root {
   --background: #0D0D0D;

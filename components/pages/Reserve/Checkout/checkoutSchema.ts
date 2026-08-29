@@ -34,36 +34,11 @@ export const checkoutSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.paymentMethod === "credit_card") {
-      const cleanCard = (data.cardNumber || "").replace(/\s+/g, "");
-      if (!cleanCard || cleanCard.length < 13) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["cardNumber"],
-          message: "Please enter a valid card number",
-        });
-      }
-
       if (!data.cardholderName || data.cardholderName.trim().length < 2) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["cardholderName"],
           message: "Please enter cardholder name",
-        });
-      }
-
-      if (!data.expiry || !/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(data.expiry.trim())) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["expiry"],
-          message: "Use format MM/YY",
-        });
-      }
-
-      if (!data.cvv || !/^[0-9]{3,4}$/.test(data.cvv.trim())) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["cvv"],
-          message: "Enter 3 or 4 digit CVV",
         });
       }
     }

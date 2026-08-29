@@ -1,14 +1,18 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { MapPin } from "lucide-react";
-import { LOCATION_SUGGESTIONS, LocationSuggestion } from "@/shared/Locations";
+import { Loader2, X } from "lucide-react";
+import { searchLocations, GeocodeResult } from "@/lib/geocoding";
+import type { LocationData } from "@/components/pages/Reserve/TripDetails/tripSchema";
 
 interface LocationInputProps {
   label?: string;
   error?: string;
-  value?: string;
-  onChange?: (value: string) => void;
+  value?: LocationData | null;
+  proximity?: { lat: number; lng: number } | null;
+  onChange?: (value: LocationData | null) => void;
+  onSearchChange?: (query: string, suggestions: GeocodeResult[], isLoading: boolean) => void;
+  onFocus?: () => void;
   placeholder?: string;
   containerClassName?: string;
 }
@@ -16,47 +20,96 @@ interface LocationInputProps {
 export default function LocationInput({
   label,
   error,
-  value = "",
+  value,
+  proximity,
   onChange,
+  onSearchChange,
+  onFocus,
   placeholder = "Address, Airport , Or Hotel",
   containerClassName = "",
 }: LocationInputProps) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [inputValue, setInputValue] = useState(value?.address || "");
+  const [isLoading, setIsLoading] = useState(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const term = value.trim().toLowerCase();
-  const suggestions = term
-    ? LOCATION_SUGGESTIONS.filter(
-        (s) =>
-          s.label.toLowerCase().includes(term) ||
-          s.subtitle.toLowerCase().includes(term)
-      ).slice(0, 6)
-    : [];
-
-  const showDropdown = open && suggestions.length > 0;
-
+  // Synchronize internal input text when external value changes
   useEffect(() => {
-    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("touchstart", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("touchstart", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
+    setInputValue(value?.address || "");
+  }, [value?.address]);
 
-  const select = (s: LocationSuggestion) => {
-    onChange?.(s.label);
-    setOpen(false);
+  // Geocode address and notify parent so suggestions display on the map
+  const runGeocode = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || trimmed.length < 2) {
+      setIsLoading(false);
+      onSearchChange?.("", [], false);
+      return;
+    }
+
+    setIsLoading(true);
+    onSearchChange?.(trimmed, [], true);
+
+    try {
+      const results = await searchLocations(trimmed);
+      setIsLoading(false);
+      onSearchChange?.(trimmed, results, false);
+
+      // Auto-set the best match if user hasn't explicitly picked one yet
+      if (results.length > 0) {
+        const best = results[0];
+        onChange?.({
+          address: trimmed,
+          lat: best.lat,
+          lng: best.lng,
+        });
+      }
+    } catch {
+      setIsLoading(false);
+      onSearchChange?.(trimmed, [], false);
+    }
+  };
+
+  const handleInputChange = (text: string) => {
+    setInputValue(text);
+
+    if (!text.trim()) {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      onChange?.(null);
+      onSearchChange?.("", [], false);
+      return;
+    }
+
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    debounceTimer.current = setTimeout(() => {
+      runGeocode(text);
+    }, 500);
+  };
+
+  const handleFocus = () => {
+    onFocus?.();
+    if (inputValue.trim() && inputValue.trim().length >= 2) {
+      runGeocode(inputValue);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+      runGeocode(inputValue);
+    }
+  };
+
+  const handleClear = () => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    setInputValue("");
+    onChange?.(null);
+    onSearchChange?.("", [], false);
   };
 
   return (
@@ -66,15 +119,13 @@ export default function LocationInput({
           {label}
         </label>
       )}
-      <div ref={containerRef} className="relative flex items-center w-full">
+      <div className="relative flex items-center w-full">
         <input
           type="text"
-          value={value}
-          onChange={(e) => {
-            onChange?.(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onFocus={handleFocus}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
           className={`w-full h-[52px] px-4 pr-10 overflow-hidden text-ellipsis whitespace-nowrap rounded-[8px] bg-[#0D0D0D] text-[#E5E4E2] font-inter text-[16px] placeholder:text-[#6D6D6D] placeholder:font-inter placeholder:text-[16px] placeholder:overflow-hidden placeholder:text-ellipsis border border-gold-deep transition-all duration-200 outline-none ${
@@ -83,32 +134,22 @@ export default function LocationInput({
               : "border-[#453823]/80 hover:border-[#C5A059]/60 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059]/30"
           }`}
         />
-        {/* <div className="absolute right-3.5 flex items-center pointer-events-none text-[#8C8273]">
-          <MapPin className="w-5 h-5" />
-        </div> */}
 
-        {showDropdown && (
-          <ul
-            className="absolute top-full left-0 right-0 z-30 mt-2 rounded-[8px] bg-[#141414] border border-gold-deep shadow-[0_12px_40px_rgba(0,0,0,0.6)] py-1.5 custom-scroll overflow-auto max-h-64"
-            style={{ animation: "dropFade 0.15s ease-out" }}
-          >
-            {suggestions.map((s) => (
-              <li
-                key={s.id}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => select(s)}
-                className="flex flex-col gap-0.5 px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-[#C5A059] group"
-              >
-                <span className="text-[#E5E4E2] group-hover:text-[#0D0D0D] text-[14px] font-inter font-[500] truncate">
-                  {s.label}
-                </span>
-                <span className="text-[#91918F] group-hover:text-[#0D0D0D]/70 text-[12px] font-inter truncate">
-                  {s.subtitle}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Clear button or loading indicator */}
+        <div className="absolute right-3 flex items-center gap-1.5 text-[#8C8273]">
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          ) : inputValue ? (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="p-1 hover:text-primary transition-colors cursor-pointer"
+              title="Clear"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : null}
+        </div>
       </div>
       {error && (
         <span className="text-red-400 text-[12px] mt-1.5 font-inter transition-opacity animate-in fade-in duration-150">

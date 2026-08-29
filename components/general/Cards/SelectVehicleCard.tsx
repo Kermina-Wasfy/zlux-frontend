@@ -49,6 +49,7 @@ export default function SelectVehicleCard({
                         src={imgSrc}
                         alt={vehicle.name}
                         fill
+                        unoptimized
                         sizes="(max-width: 640px) 110px, (max-width: 768px) 160px, 190px"
                         className="object-cover object-center"
                         onError={() => setImgSrc("/herosectionBg.jpg")}

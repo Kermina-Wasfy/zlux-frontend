@@ -3,23 +3,32 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Elements, useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
+import { getStripe } from "@/lib/stripe";
 import PassengerInformation from "./PassengerInformation";
 import PaymentMethod from "./PaymentMethod";
 import BookingSummary, { BookingDetails } from "./BookingSummary";
 import SideNote from "./SideNote";
 import { checkoutSchema, CheckoutFormData } from "./checkoutSchema";
-import { buildBookingDetails } from "@/shared/booking";
+import { buildBookingDetails, getBooking, persistBooking } from "@/shared/booking";
+import { updatePassengerInfo } from "@/api/passengerInfo";
+import { createPaymentIntent } from "@/api/createPaymentIntent";
+import { confirmPayment } from "@/api/confirmPayment";
+import { confirmBooking } from "@/api/confirmBooking";
 
 interface MainCheckoutProps {
   initialBookingDetails?: BookingDetails;
   onConfirm?: (data: CheckoutFormData) => void;
 }
 
-export default function MainCheckout({
+function MainCheckoutForm({
   initialBookingDetails,
   onConfirm,
 }: MainCheckoutProps) {
   const router = useRouter();
+  const stripe = useStripe();
+  const elements = useElements();
+
   const [formData, setFormData] = useState<CheckoutFormData>({
     firstName: "",
     lastName: "",
@@ -38,10 +47,25 @@ export default function MainCheckout({
   const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | undefined>(initialBookingDetails);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
+  // Initialize booking details and pre-fetch PaymentIntent clientSecret
   useEffect(() => {
     const stored = buildBookingDetails();
     setBookingDetails(stored ?? initialBookingDetails);
+
+    const booking = getBooking();
+    if (booking && booking._id) {
+      createPaymentIntent(booking._id, booking.accessToken)
+        .then((res) => {
+          if (res?.clientSecret) {
+            setClientSecret(res.clientSecret);
+          }
+        })
+        .catch((err) => {
+          console.warn("Could not pre-fetch payment intent:", err?.message || err);
+        });
+    }
   }, [initialBookingDetails]);
 
   const handleChange = (field: keyof CheckoutFormData, value: string) => {
@@ -53,12 +77,48 @@ export default function MainCheckout({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Common finalize flow after successful Stripe payment authorization
+  const handlePaymentCompletion = async (paymentIntentId: string, booking: ReturnType<typeof getBooking>) => {
+    if (!booking) return;
+
+    try {
+      // Step 6: Confirm payment in backend (updates paymentStatus to 'paid')
+      await confirmPayment(
+        {
+          bookingId: booking._id,
+          paymentIntentId,
+        },
+        booking.accessToken
+      );
+
+      // Step 7: Confirm booking in backend with x-booking-token (updates status to 'confirmed')
+      const confirmedBooking = await confirmBooking(booking._id, booking.accessToken);
+      if (confirmedBooking) {
+        persistBooking(confirmedBooking);
+      }
+
+      toast.success("Reservation confirmed! Your chauffeur is booked.");
+
+      if (onConfirm) {
+        onConfirm(formData);
+      } else {
+        router.push("/reserve/confirmation");
+      }
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to record confirmed booking in backend.";
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // 1. Validate Form Data
     const result = checkoutSchema.safeParse(formData);
-
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof CheckoutFormData, string>> = {};
       result.error.issues.forEach((issue) => {
@@ -74,14 +134,92 @@ export default function MainCheckout({
     }
 
     setErrors({});
-    toast.success("Reservation confirmed! A confirmation email has been sent.");
 
-    if (onConfirm) {
-      onConfirm(result.data);
-    } else {
-      router.push("/reserve/confirmation");
+    const booking = getBooking();
+    if (!booking) {
+      setIsSubmitting(false);
+      toast.error("No active booking found. Please start your reservation again.");
+      return;
     }
-    setIsSubmitting(false);
+
+    // 2. Save Passenger Information to Backend
+    try {
+      const updated = await updatePassengerInfo(booking._id, booking.accessToken, {
+        firstName: result.data.firstName,
+        lastName: result.data.lastName,
+        email: result.data.email,
+        phone: result.data.phone,
+        passengerCount: Number(result.data.passengerCount) || 1,
+        flightNumber: result.data.flightNumber || "",
+        specialRequests: result.data.specialRequests || "",
+      });
+      persistBooking(updated);
+    } catch {
+      setIsSubmitting(false);
+      toast.error("We couldn't save your passenger information. Please check your connection.");
+      return;
+    }
+
+    // 3. Process Payment
+    if (formData.paymentMethod === "credit_card") {
+      if (!stripe || !elements) {
+        setIsSubmitting(false);
+        toast.error("Stripe payment gateway is still initializing. Please wait a moment.");
+        return;
+      }
+
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        setIsSubmitting(false);
+        toast.error("Card input element was not found. Please refresh.");
+        return;
+      }
+
+      // Ensure clientSecret is available
+      let secret = clientSecret;
+      if (!secret) {
+        try {
+          const intentRes = await createPaymentIntent(booking._id, booking.accessToken);
+          secret = intentRes.clientSecret;
+          setClientSecret(secret);
+        } catch {
+          setIsSubmitting(false);
+          toast.error("Could not initiate payment with the server. Please try again.");
+          return;
+        }
+      }
+
+      // Step 5: Direct browser-to-Stripe confirmation (Front <-> Stripe)
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(secret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: formData.cardholderName || `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            phone: formData.phone,
+          },
+        },
+      });
+
+      if (stripeError) {
+        setIsSubmitting(false);
+        toast.error(stripeError.message || "Payment authorization failed. Please check your card.");
+        return;
+      }
+
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        await handlePaymentCompletion(paymentIntent.id, booking);
+      } else {
+        setIsSubmitting(false);
+        toast.error("Payment status is incomplete. Please contact support.");
+      }
+    } else if (formData.paymentMethod === "apple_pay") {
+      setIsSubmitting(false);
+      toast.info("Please use the Apple Pay button above to authenticate with your device.");
+    } else if (formData.paymentMethod === "paypal") {
+      setIsSubmitting(false);
+      toast.info("PayPal integration will redirect shortly.");
+    }
   };
 
   return (
@@ -113,6 +251,21 @@ export default function MainCheckout({
                 errors={errors}
                 onChange={handleChange}
                 isSubmitting={isSubmitting}
+                estimatedTotal={
+                  typeof bookingDetails?.estimatedTotal === "number"
+                    ? bookingDetails.estimatedTotal
+                    : parseFloat(String(bookingDetails?.estimatedTotal || "150").replace(/[^0-9.]/g, "")) || 150
+                }
+                clientSecret={clientSecret}
+                onApplePaySuccess={(intentId) => {
+                  const currentBooking = getBooking();
+                  if (currentBooking) {
+                    handlePaymentCompletion(intentId, currentBooking);
+                  }
+                }}
+                onApplePayError={(msg) => {
+                  toast.error(msg);
+                }}
               />
             </div>
 
@@ -125,5 +278,15 @@ export default function MainCheckout({
         </form>
       </div>
     </section>
+  );
+}
+
+export default function MainCheckout(props: MainCheckoutProps) {
+  const [stripePromise] = useState(() => getStripe());
+
+  return (
+    <Elements stripe={stripePromise}>
+      <MainCheckoutForm {...props} />
+    </Elements>
   );
 }

@@ -1,69 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import SelectVehicleCard, { Vehicle } from "@/components/general/Cards/SelectVehicleCard";
 import Button from "@/components/ui/Button";
 import { toast } from "sonner";
-import { persistVehicle } from "@/shared/booking";
-
-export const VEHICLES_DATA: Vehicle[] = [
-  {
-    id: "lincoln-navigator",
-    name: "Lincoln Navigator",
-    description: "Effortless American Luxury. 30-Way Adjustable Perfect Position Seats.",
-    passengers: 6,
-    bags: 6,
-    category: "SUVs",
-    price: 215,
-    priceUnit: "Per Hour",
-    image: "/vehicle1.jpg",
-  },
-  {
-    id: "cadillac-escalade",
-    name: "Cadillac Escalade",
-    description: "Commanding Presence. Perfect For Executive Travel With Full Entertainment Suite.",
-    passengers: 5,
-    bags: 6,
-    category: "SUVs",
-    price: 225,
-    priceUnit: "Per Hour",
-    image: "/vehicle2.jpg",
-  },
-  {
-    id: "mercedes-benz-s-class",
-    name: "Mercedes-Benz S-Class",
-    description: "The Pinnacle Of Automotive Luxury. Messaging Seats, Ambient Lighting, And Whisper-Quiet Cabin.",
-    passengers: 3,
-    bags: 3,
-    category: "Sedans",
-    price: 185,
-    priceUnit: "Per Hour",
-    image: "/vehicle1.jpg",
-  },
-  {
-    id: "bmw-7-series",
-    name: "BMW 7 Series",
-    description: "Executive Elegance With Unmatched Driving Dynamics And Theatre Screen.",
-    passengers: 3,
-    bags: 3,
-    category: "Sedans",
-    price: 195,
-    priceUnit: "Per Hour",
-    image: "/vehicle2.jpg",
-  },
-  {
-    id: "rolls-royce-phantom",
-    name: "Rolls-Royce Phantom",
-    description: "The Ultimate Expression Of Luxury. Starlight Headliner, Champagne Service.",
-    passengers: 3,
-    bags: 2,
-    category: "Sedans",
-    price: 595,
-    priceUnit: "Per Hour",
-    image: "/vehicle1.jpg",
-  },
-];
+import { getTripDetails, persistVehicle, persistBooking, serviceLabel } from "@/shared/booking";
+import { fetchAvailableVehicles, availableVehicleToCard } from "@/api/availableVehicles";
+import { createBooking } from "@/api/createBooking";
 
 interface SelectVehicleProps {
   onContinue?: (vehicle: Vehicle) => void;
@@ -71,58 +16,149 @@ interface SelectVehicleProps {
 
 export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
   const router = useRouter();
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string>("lincoln-navigator");
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [noTrip, setNoTrip] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const selectedVehicle = VEHICLES_DATA.find((v) => v.id === selectedVehicleId) || VEHICLES_DATA[0];
+  const loadVehicles = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    setNoTrip(false);
+    const trip = getTripDetails();
+    if (!trip) {
+      setNoTrip(true);
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const list = await fetchAvailableVehicles({
+        date: trip.date,
+        time: trip.pickupTime,
+        passengers: trip.passengers,
+      });
+      const vehicles = list.map(availableVehicleToCard);
+      setVehicles(vehicles);
+      setSelectedVehicleId((prev) =>
+        prev && vehicles.some((v) => v.id === prev) ? prev : (vehicles[0]?.id ?? null)
+      );
+    } catch {
+      setLoadError("We couldn't load available vehicles. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const handleContinue = () => {
+  useEffect(() => {
+    void loadVehicles();
+  }, [loadVehicles]);
+
+  const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId) || null;
+
+  const handleContinue = async () => {
     if (!selectedVehicle) {
       toast.error("Please select a vehicle to proceed.");
       return;
     }
-    toast.success(`Selected ${selectedVehicle.name}! Proceeding to checkout.`);
-    persistVehicle(selectedVehicle);
-    if (onContinue) {
-      onContinue(selectedVehicle);
-    } else {
-      router.push("/reserve/checkout");
+    const trip = getTripDetails();
+    if (!trip?.pickupLocation || !trip.destination) {
+      toast.error("Trip details are missing. Please start over.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const booking = await createBooking({
+        pickupLocation: trip.pickupLocation,
+        destination: trip.destination,
+        date: trip.date,
+        time: trip.pickupTime,
+        serviceType: serviceLabel(trip.serviceType) ?? trip.serviceType,
+        vehicleId: selectedVehicle.id,
+        estimatedHours: trip.estimatedHours,
+      });
+      persistBooking(booking);
+      persistVehicle(selectedVehicle);
+      setIsSubmitting(false);
+      toast.success(`Booking ${booking.bookingReference} confirmed! Proceeding to checkout.`);
+      if (onContinue) {
+        onContinue(selectedVehicle);
+      } else {
+        router.push("/reserve/checkout");
+      }
+    } catch {
+      setIsSubmitting(false);
+      toast.error("We couldn't create your booking. Please try again.");
     }
   };
 
   return (
     <section className="w-full pb-12 pt-4 bg-[#0D0D0D]">
       <div className="container mx-auto">
-        {/* Section Heading */}
-        <div className="mb-8 md:mb-10">
-          <h1 className="text-[20px] md:text-[40px] font-[600] text-primary font-montserrat tracking-tight mb-3">
-            Select Your Vehicle
-          </h1>
-          <p className="text-[14px] md:text-[20px] text-silver font-inter font-[600]">
-            All Vehicles Are Available For Your Requested Date And Time. Pricing Includes Chauffeur And Gratuity.
-          </p>
-        </div>
+        {!noTrip && !isLoading && !loadError && vehicles.length > 0 && (
+          <div className="mb-8 md:mb-10">
+            <h1 className="text-[20px] md:text-[40px] font-[600] text-primary font-montserrat tracking-tight mb-3">
+              Select Your Vehicle
+            </h1>
+            <p className="text-[14px] md:text-[20px] text-silver font-inter font-[600]">
+              All Vehicles Are Available For Your Requested Date And Time. Pricing Includes Chauffeur And Gratuity.
+            </p>
+          </div>
+        )}
 
         {/* Vehicle Cards List */}
         <div className="flex flex-col gap-4 md:gap-8 md:px-12">
-          {VEHICLES_DATA.map((vehicle) => (
-            <SelectVehicleCard
-              key={vehicle.id}
-              vehicle={vehicle}
-              isSelected={selectedVehicleId === vehicle.id}
-              onSelect={(v) => setSelectedVehicleId(v.id)}
-            />
-          ))}
+          {noTrip ? (
+            <div className="flex flex-col items-center py-16 gap-4 text-center bg-[#151515] border border-gold-deep rounded-[8px] p-6 mt-10">
+              <p className="text-silver font-inter text-[16px]">
+                Please fill in your trip details first.
+              </p>
+              <Button onClick={() => router.push("/reserve")} className="px-6 py-2 text-[14px]">
+                Back To Trip Details
+              </Button>
+            </div>
+          ) : isLoading ? (
+            <div className="flex items-center justify-center py-20 text-primary">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+          ) : loadError ? (
+            <div className="flex flex-col items-center py-16 gap-4 text-center bg-[#151515] border border-gold-deep rounded-[8px] p-6 mt-10">
+              <p className="text-silver font-inter text-[16px]">{loadError}</p>
+              <Button onClick={() => void loadVehicles()} className="px-6 py-2 text-[14px]">
+                Try Again
+              </Button>
+            </div>
+          ) : vehicles.length === 0 ? (
+            <div className="flex flex-col items-center py-16 gap-2 text-center bg-[#151515] border border-gold-deep rounded-[8px] p-6 mt-10">
+              <p className="text-silver font-inter text-[16px]">
+                No vehicles available for your party size. Please adjust the number of passengers.
+              </p>
+            </div>
+          ) : (
+            vehicles.map((vehicle) => (
+              <SelectVehicleCard
+                key={vehicle.id}
+                vehicle={vehicle}
+                isSelected={selectedVehicleId === vehicle.id}
+                onSelect={(v) => setSelectedVehicleId(v.id)}
+              />
+            ))
+          )}
         </div>
 
         {/* Action Button: Continue To Checkout */}
-        <div className="pt-8 md:pt-10 flex justify-end md:mr-12">
-          <Button
-            onClick={handleContinue}
-            className="w-full sm:w-auto px-6 py-3.5 text-[16px] md:text-[20px]"
-          >
-            Continue To Checkout
-          </Button>
-        </div>
+        {!noTrip && !isLoading && !loadError && vehicles.length > 0 && (
+          <div className="pt-8 md:pt-10 flex justify-end md:mr-12">
+            <Button
+              onClick={() => void handleContinue()}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto px-6 py-3.5 text-[16px] md:text-[20px]"
+            >
+              {isSubmitting ? "Creating Booking..." : "Continue To Checkout"}
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );

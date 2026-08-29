@@ -7,7 +7,8 @@ import BookingSummary, { BookingDetails } from "../Checkout/BookingSummary";
 import BookingReferenceCard from "./BookingReferenceCard";
 import WhatHappensNext from "./WhatHappensNext";
 import Button from "@/components/ui/Button";
-import { buildBookingDetails } from "@/shared/booking";
+import { buildBookingDetails, getBooking, bookingToBookingDetails } from "@/shared/booking";
+import { fetchBookingByReference } from "@/api/bookingByReference";
 
 interface MainOrderCofirmationProps {
   bookingReference?: string;
@@ -19,11 +20,30 @@ export default function MainOrderCofirmation({
   bookingDetails: bookingDetailsProp,
 }: MainOrderCofirmationProps) {
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | undefined>(bookingDetailsProp);
+  const [reference, setReference] = useState<string | undefined>(bookingReference);
 
   useEffect(() => {
     const stored = buildBookingDetails();
     setBookingDetails(stored ?? bookingDetailsProp);
-  }, [bookingDetailsProp]);
+    const booking = getBooking();
+    const resolved = booking?.bookingReference || bookingReference || undefined;
+    if (booking?.bookingReference) {
+      setReference(booking.bookingReference);
+    }
+    if (resolved) {
+      let active = true;
+      fetchBookingByReference(resolved)
+        .then((serverBooking) => {
+          if (active) setBookingDetails(bookingToBookingDetails(serverBooking));
+        })
+        .catch(() => {
+          // keep locally-stored details when the lookup fails
+        });
+      return () => {
+        active = false;
+      };
+    }
+  }, [bookingDetailsProp, bookingReference]);
   return (
     <section className="w-full min-h-screen bg-[#0D0D0D] py-12 md:py-16 px-4 flex flex-col items-center justify-center">
       <div className="w-full mx-auto flex flex-col items-center">
@@ -48,7 +68,7 @@ export default function MainOrderCofirmation({
         </p>
 
         {/* 1. Booking Reference Box */}
-        <BookingReferenceCard reference={bookingReference} className="mb-10" />
+        <BookingReferenceCard reference={reference} className="mb-10" />
 
         {/* 2. Booking Summary Card (reused from Checkout, with showTotal={false}) */}
         <div className="w-full mb-6 max-w-[750px]">

@@ -43,6 +43,7 @@ export default function BookingSummary({
           alt={vehicleName}
           fill
           priority
+          unoptimized
           sizes="(max-width: 768px) 100vw, 450px"
           className="object-cover object-center"
         />
