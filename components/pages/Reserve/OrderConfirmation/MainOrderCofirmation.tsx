@@ -7,6 +7,7 @@ import BookingSummary, { BookingDetails } from "../Checkout/BookingSummary";
 import BookingReferenceCard from "./BookingReferenceCard";
 import WhatHappensNext from "./WhatHappensNext";
 import Button from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { buildBookingDetails, getBooking, bookingToBookingDetails } from "@/shared/booking";
 import { fetchBookingByReference } from "@/api/bookingByReference";
 
@@ -21,6 +22,7 @@ export default function MainOrderCofirmation({
 }: MainOrderCofirmationProps) {
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | undefined>(bookingDetailsProp);
   const [reference, setReference] = useState<string | undefined>(bookingReference);
+  const [isFetchingBooking, setIsFetchingBooking] = useState(false);
 
   useEffect(() => {
     const stored = buildBookingDetails();
@@ -32,12 +34,16 @@ export default function MainOrderCofirmation({
     }
     if (resolved) {
       let active = true;
+      setIsFetchingBooking(true);
       fetchBookingByReference(resolved)
         .then((serverBooking) => {
           if (active) setBookingDetails(bookingToBookingDetails(serverBooking));
         })
         .catch(() => {
           // keep locally-stored details when the lookup fails
+        })
+        .finally(() => {
+          if (active) setIsFetchingBooking(false);
         });
       return () => {
         active = false;
@@ -71,8 +77,23 @@ export default function MainOrderCofirmation({
         <BookingReferenceCard reference={reference} className="mb-10" />
 
         {/* 2. Booking Summary Card (reused from Checkout, with showTotal={false}) */}
-        <div className="w-full mb-6 max-w-[750px]">
-          <BookingSummary details={bookingDetails} showTotal={false} />
+        <div className="w-full mb-6 max-w-[750px]" aria-busy={isFetchingBooking && !bookingDetails}>
+          {isFetchingBooking && !bookingDetails ? (
+            <div className="w-full bg-[#151515] pb-4 md:pb-6 border border-gold-deep flex flex-col">
+              <Skeleton className="h-[180px] sm:h-[210px] md:h-[240px] w-full rounded-none" />
+              <div className="px-4 md:px-6 py-4 space-y-3">
+                <Skeleton className="h-[22px] w-2/3" />
+                <Skeleton className="h-[16px] w-1/2" />
+                <Skeleton className="h-[16px] w-full" />
+                <Skeleton className="h-[16px] w-3/4" />
+                <Skeleton className="h-[16px] w-2/3" />
+                <Skeleton className="h-[16px] w-1/2" />
+                <Skeleton className="h-[16px] w-3/4" />
+              </div>
+            </div>
+          ) : (
+            <BookingSummary details={bookingDetails} showTotal={false} />
+          )}
         </div>
 
         {/* 3. What Happens Next Card */}

@@ -2,8 +2,8 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import SelectVehicleCard, { Vehicle } from "@/components/general/Cards/SelectVehicleCard";
+import VehicleCardSkeleton from "@/components/general/Skeletons/VehicleCardSkeleton";
 import Button from "@/components/ui/Button";
 import { toast } from "sonner";
 import { getTripDetails, persistVehicle, persistBooking, serviceLabel } from "@/shared/booking";
@@ -119,8 +119,10 @@ export default function SelectVehicle({ onContinue }: SelectVehicleProps) {
               </Button>
             </div>
           ) : isLoading ? (
-            <div className="flex items-center justify-center py-20 text-primary">
-              <Loader2 className="w-8 h-8 animate-spin" />
+            <div className="flex flex-col gap-4 md:gap-8" aria-busy="true" aria-label="Loading available vehicles">
+              <VehicleCardSkeleton />
+              <VehicleCardSkeleton />
+              <VehicleCardSkeleton />
             </div>
           ) : loadError ? (
             <div className="flex flex-col items-center py-16 gap-4 text-center bg-[#151515] border border-gold-deep rounded-[8px] p-6 mt-10">
