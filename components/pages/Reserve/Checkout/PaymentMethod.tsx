@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   CardElement,
   useStripe,
@@ -9,7 +9,7 @@ import {
 import Input from "@/components/ui/Input";
 import { CheckoutFormData } from "./checkoutSchema";
 import Button from "@/components/ui/Button";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, AlertCircle, ShieldAlert, CreditCard, ExternalLink } from "lucide-react";
 
 interface PaymentMethodProps {
   formData: CheckoutFormData;
@@ -56,56 +56,143 @@ export default function PaymentMethod({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
   const [canMakeApplePay, setCanMakeApplePay] = useState<boolean | null>(null);
+  const [diagnosticReason, setDiagnosticReason] = useState<
+    "insecure_http" | "no_card_or_unregistered_domain" | "unsupported_browser" | null
+  >(null);
+  const [currentDomain, setCurrentDomain] = useState<string>("");
 
-  // Setup Apple Pay PaymentRequest if supported by browser/device
+  // Keep references to volatile props to avoid recreating the Stripe PaymentRequest on re-renders
+  const clientSecretRef = useRef(clientSecret);
+  clientSecretRef.current = clientSecret;
+
+  const onApplePaySuccessRef = useRef(onApplePaySuccess);
+  onApplePaySuccessRef.current = onApplePaySuccess;
+
+  const onApplePayErrorRef = useRef(onApplePayError);
+  onApplePayErrorRef.current = onApplePayError;
+
+  // Setup Apple Pay PaymentRequest once when stripe is initialized
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentDomain(window.location.host);
+    }
+
     if (!stripe) return;
+
+    // Detect browser & environment capabilities
+    const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hasApplePaySession = typeof window !== "undefined" && "ApplePaySession" in window;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hardwareCanPay =
+      hasApplePaySession &&
+      typeof (window as any).ApplePaySession?.canMakePayments === "function" &&
+      (window as any).ApplePaySession.canMakePayments();
+    const isAppleDevice =
+      typeof navigator !== "undefined" && /Macintosh|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isSafari =
+      typeof navigator !== "undefined" &&
+      (/^((?!chrome|android).)*safari/i.test(navigator.userAgent) ||
+        /iPhone|iPad|iPod/i.test(navigator.userAgent)) &&
+      !/crios/i.test(navigator.userAgent);
+
+    console.info("[Apple Pay Diagnostic]", {
+      isHttps,
+      isLocalhost,
+      isAppleDevice,
+      isSafari,
+      hasApplePaySession,
+      hardwareCanPay,
+    });
+
+    const amountInCents = Math.max(100, Math.round((estimatedTotal || 150) * 100));
 
     const pr = stripe.paymentRequest({
       country: "US",
       currency: "usd",
       total: {
         label: "ZLUX Private Chauffeur",
-        amount: Math.max(100, Math.round((estimatedTotal || 150) * 100)),
+        amount: amountInCents,
       },
       requestPayerName: true,
       requestPayerEmail: true,
       requestPayerPhone: true,
     });
 
-    pr.canMakePayment().then((result) => {
-      if (result && result.applePay) {
-        setPaymentRequest(pr);
-        setCanMakeApplePay(true);
-      } else {
+    pr.canMakePayment()
+      .then((result) => {
+        console.info("[Apple Pay Diagnostic] canMakePayment result:", result);
+        if (result && result.applePay) {
+          setPaymentRequest(pr);
+          setCanMakeApplePay(true);
+          setDiagnosticReason(null);
+        } else {
+          setCanMakeApplePay(false);
+          if (!isHttps && !isLocalhost) {
+            setDiagnosticReason("insecure_http");
+          } else if (hardwareCanPay || isSafari || isAppleDevice) {
+            setDiagnosticReason("no_card_or_unregistered_domain");
+          } else {
+            setDiagnosticReason("unsupported_browser");
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("[Apple Pay Diagnostic] canMakePayment error:", err);
         setCanMakeApplePay(false);
-      }
-    });
+        if (!isHttps && !isLocalhost) {
+          setDiagnosticReason("insecure_http");
+        } else if (hardwareCanPay || isSafari || isAppleDevice) {
+          setDiagnosticReason("no_card_or_unregistered_domain");
+        } else {
+          setDiagnosticReason("unsupported_browser");
+        }
+      });
 
     pr.on("paymentmethod", async (ev) => {
-      if (!clientSecret) {
+      const secret = clientSecretRef.current;
+      if (!secret) {
         ev.complete("fail");
-        onApplePayError?.("Payment session could not be initialized. Please try again.");
+        onApplePayErrorRef.current?.("Payment session could not be initialized. Please try again.");
         return;
       }
 
       const { error, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret,
+        secret,
         { payment_method: ev.paymentMethod.id },
         { handleActions: false }
       );
 
       if (error) {
         ev.complete("fail");
-        onApplePayError?.(error.message || "Apple Pay payment failed.");
+        onApplePayErrorRef.current?.(error.message || "Apple Pay payment failed.");
       } else {
         ev.complete("success");
         if (paymentIntent && paymentIntent.id) {
-          onApplePaySuccess?.(paymentIntent.id);
+          onApplePaySuccessRef.current?.(paymentIntent.id);
         }
       }
     });
-  }, [stripe, estimatedTotal, clientSecret, onApplePayError, onApplePaySuccess]);
+  }, [stripe]);
+
+  // Dynamically update payment request total if booking details or price change
+  useEffect(() => {
+    if (paymentRequest && estimatedTotal) {
+      try {
+        paymentRequest.update({
+          total: {
+            label: "ZLUX Private Chauffeur",
+            amount: Math.max(100, Math.round(estimatedTotal * 100)),
+          },
+        });
+      } catch (err) {
+        console.warn("Could not update PaymentRequest total:", err);
+      }
+    }
+  }, [paymentRequest, estimatedTotal]);
 
   return (
     <div className="w-full bg-[#151515] pt-4 md:pt-6">
@@ -212,25 +299,120 @@ export default function PaymentMethod({
               </div>
             </div>
           ) : canMakeApplePay === false ? (
-            <div className="py-6 px-4 rounded-[8px] bg-[#101010] border border-gold-deep/60 text-center space-y-2">
-              <p className="text-platinum font-inter font-[600] text-[15px]">
-                Apple Pay Not Available On This Browser
-              </p>
-              <p className="text-silver font-inter text-[13px]">
-                Apple Pay is supported on <strong>Safari</strong> on iOS and macOS with a card set up in Apple Wallet.
-              </p>
-              <button
-                type="button"
-                onClick={() => onChange("paymentMethod", "credit_card")}
-                className="mt-3 text-primary hover:underline text-[13px] font-inter cursor-pointer"
-              >
-                Switch to Credit Card
-              </button>
-            </div>
+            diagnosticReason === "insecure_http" ? (
+              <div className="py-5 px-5 rounded-[8px] bg-[#101010] border border-gold-deep/60 text-left space-y-4">
+                <div className="flex items-start gap-3">
+                  <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-platinum font-inter font-[600] text-[15px]">
+                      HTTPS Connection Required for Apple Pay
+                    </p>
+                    <p className="text-silver font-inter text-[13px] mt-1 leading-relaxed">
+                      Safari was detected on your Apple device, but Apple strictly disables Apple Pay over unencrypted (HTTP) connections.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#181818] p-3.5 rounded-[6px] border border-white/5 space-y-2 text-[12px] font-inter text-silver">
+                  <p className="text-platinum font-[500]">How to resolve:</p>
+                  <ul className="list-disc list-inside space-y-1 text-[#A0A0A0]">
+                    <li>
+                      When testing locally from an iPhone or Mac, serve the site over HTTPS (e.g. via <code className="text-primary font-mono">ngrok</code> or Next.js experimental HTTPS).
+                    </li>
+                    <li>
+                      In production or staging, ensure you are browsing via <code className="text-primary font-mono">https://</code>.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => onChange("paymentMethod", "credit_card")}
+                    className="px-4 py-2.5 rounded-[6px] bg-primary text-black font-inter font-[600] text-[13px] hover:bg-primary/90 transition-all cursor-pointer inline-flex items-center gap-2"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Switch to Credit Card</span>
+                  </button>
+                </div>
+              </div>
+            ) : diagnosticReason === "no_card_or_unregistered_domain" ? (
+              <div className="py-5 px-5 rounded-[8px] bg-[#101010] border border-gold-deep/60 text-left space-y-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-platinum font-inter font-[600] text-[15px]">
+                      Safari Detected — Additional Setup Required for Apple Pay
+                    </p>
+                    <p className="text-silver font-inter text-[13px] mt-1 leading-relaxed">
+                      Safari on your Apple device is recognized, but Stripe could not initialize an active Apple Pay session.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#181818] p-3.5 rounded-[6px] border border-white/5 space-y-2 text-[12px] font-inter text-silver">
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary font-bold">1.</span>
+                    <span>
+                      <strong className="text-platinum">Apple Wallet Card:</strong> Your Apple Wallet must have an active debit or credit card configured on this device.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary font-bold">2.</span>
+                    <span>
+                      <strong className="text-platinum">Stripe Domain Verification:</strong> The domain <code className="text-primary font-mono">{currentDomain || "your domain"}</code> must be registered in your{" "}
+                      <a
+                        href="https://dashboard.stripe.com/settings/payments/apple_pay"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline text-primary hover:text-primary/80 inline-flex items-center gap-1"
+                      >
+                        <span>Stripe Dashboard</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary font-bold">3.</span>
+                    <span>
+                      <strong className="text-platinum">Safari Privacy:</strong> Ensure you are not using a Private Browsing window, and that <em className="text-silver">Allow websites to check for Apple Pay</em> is enabled in Safari preferences.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => onChange("paymentMethod", "credit_card")}
+                    className="px-4 py-2.5 rounded-[6px] bg-primary text-black font-inter font-[600] text-[13px] hover:bg-primary/90 transition-all cursor-pointer inline-flex items-center gap-2"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Switch to Credit Card</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="py-6 px-4 rounded-[8px] bg-[#101010] border border-gold-deep/60 text-center space-y-2">
+                <p className="text-platinum font-inter font-[600] text-[15px]">
+                  Apple Pay Not Available On This Device / Browser
+                </p>
+                <p className="text-silver font-inter text-[13px]">
+                  Apple Pay is supported on <strong>Safari</strong> on iOS and macOS with an active card set up in Apple Wallet.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => onChange("paymentMethod", "credit_card")}
+                  className="mt-3 text-primary hover:underline text-[13px] font-inter cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Switch to Credit Card</span>
+                </button>
+              </div>
+            )
           ) : (
             <div className="py-6 text-center text-silver font-inter text-[14px] flex items-center justify-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              <span>Detecting Apple Pay availability...</span>
+              <span>Checking Apple Pay availability...</span>
             </div>
           )}
         </div>
@@ -245,20 +427,31 @@ export default function PaymentMethod({
 
       {/* Confirm Reservation CTA Button */}
       <div className="pt-16">
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full h-[52px] px-8 rounded-[8px] bg-gradient-primary font-inter font-[600] text-[16px] md:text-[20px] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Processing Payment...</span>
-            </>
-          ) : (
-            "Confirm Reservation"
-          )}
-        </Button>
+        {formData.paymentMethod === "apple_pay" && canMakeApplePay === false ? (
+          <Button
+            type="button"
+            onClick={() => onChange("paymentMethod", "credit_card")}
+            className="w-full h-[52px] px-8 rounded-[8px] bg-gradient-primary font-inter font-[600] text-[16px] md:text-[20px] transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <CreditCard className="w-5 h-5 text-black" />
+            <span>Switch to Credit Card to Continue</span>
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full h-[52px] px-8 rounded-[8px] bg-gradient-primary font-inter font-[600] text-[16px] md:text-[20px] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Processing Payment...</span>
+              </>
+            ) : (
+              "Confirm Reservation"
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );
